@@ -15,6 +15,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -443,6 +445,48 @@
             color: var(--text-secondary);
             margin-top: 2px;
             opacity: 0.8;
+        }
+
+        .daily-budget-info {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-top: 10px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .daily-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 0.8rem;
+        }
+
+        .daily-item:not(:last-child) {
+            border-bottom: 1px dotted var(--border-color);
+        }
+
+        .daily-label {
+            color: var(--text-secondary);
+        }
+
+        .daily-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .daily-value.positive {
+            color: var(--accent-income);
+        }
+
+        .daily-value.negative {
+            color: var(--accent-expense);
+        }
+
+        .daily-value small {
+            font-weight: 400;
+            opacity: 0.7;
         }
 
         .action-btn {
@@ -1025,6 +1069,12 @@
     <header class="header">
         <h1><i class="fas fa-chart-pie"></i> Bütçe Takip</h1>
         <div class="header-actions">
+            <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
+                <i class="fas fa-file-pdf"></i>
+            </button>
+            <button class="header-btn" onclick="generateExcelReport()" title="Excel Rapor">
+                <i class="fas fa-file-excel"></i>
+            </button>
             <button class="header-btn" onclick="openDataModal()" title="Veri Yönetimi">
                 <i class="fas fa-database"></i>
             </button>
@@ -1758,6 +1808,11 @@
                     ? getRateForMonth('TRY', currentMonth)
                     : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 
+                // RUB kuru (aylık veya yıllık ortalama)
+                const rubRate = isMonthly
+                    ? getRateForMonth('RUB', currentMonth)
+                    : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+
                 container.innerHTML = cats.map(cat => {
                     // Plan değeri (aylık veya yıllık)
                     const plan = isMonthly
@@ -1779,6 +1834,50 @@
 
                     const planLabel = isMonthly ? 'Aylık Plan' : 'Yıllık Plan';
                     const subtitle = `${txList.length} işlem`;
+
+                    // Günlük limit hesaplama (sadece aylık görünüm ve gider için)
+                    let dailySection = '';
+                    if (isMonthly && type === 'expense' && plan > 0) {
+                        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                        const today = new Date();
+                        const currentDay = (today.getFullYear() === currentYear && today.getMonth() === currentMonth)
+                            ? today.getDate()
+                            : daysInMonth;
+
+                        const dailyLimit = plan / daysInMonth;
+                        const dailyLimitTRY = dailyLimit * tryRate;
+                        const dailyLimitRUB = dailyLimit * rubRate;
+
+                        // Bugüne kadar olması gereken toplam harcama
+                        const expectedSpent = dailyLimit * currentDay;
+
+                        // Günlük ortalama harcama
+                        const dailyAvgSpent = currentDay > 0 ? fact / currentDay : 0;
+                        const dailyAvgSpentTRY = dailyAvgSpent * tryRate;
+                        const dailyAvgSpentRUB = dailyAvgSpent * rubRate;
+
+                        // Durum: günlük ortalama, günlük limitin altında mı?
+                        const dailyStatus = dailyAvgSpent <= dailyLimit ? 'positive' : 'negative';
+                        const dailyDiff = dailyLimit - dailyAvgSpent;
+                        const dailyDiffRUB = dailyDiff * rubRate;
+
+                        dailySection = `
+                            <div class="daily-budget-info">
+                                <div class="daily-item">
+                                    <span class="daily-label">📅 Günlük Limit:</span>
+                                    <span class="daily-value">${formatCurrency(dailyLimit)} <small>(${formatCurrency(dailyLimitTRY, 'TRY')} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small></span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">📊 Günlük Ortalama:</span>
+                                    <span class="daily-value ${dailyStatus}">${formatCurrency(dailyAvgSpent)} <small>(${formatCurrency(dailyAvgSpentTRY, 'TRY')} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small></span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">📈 Günlük Fark:</span>
+                                    <span class="daily-value ${dailyStatus}">${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiffRUB, 'RUB')})</small></span>
+                                </div>
+                            </div>
+                        `;
+                    }
 
                     return `
                         <div class="budget-item">
@@ -1805,19 +1904,20 @@
                                 <div class="stat-box">
                                     <div class="stat-label">${planLabel}</div>
                                     <div class="stat-value plan">${formatCurrency(plan)}</div>
-                                    <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')}</div>
+                                    <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')} / ${formatCurrency(plan * rubRate, 'RUB')}</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Gerçekleşen</div>
                                     <div class="stat-value fact">${formatCurrency(fact)}</div>
-                                    <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')}</div>
+                                    <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')} / ${formatCurrency(fact * rubRate, 'RUB')}</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Fark</div>
                                     <div class="stat-value diff ${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatCurrency(diff)}</div>
-                                    <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')}</div>
+                                    <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')} / ${diff >= 0 ? '+' : ''}${formatCurrency(diff * rubRate, 'RUB')}</div>
                                 </div>
                             </div>
+                            ${dailySection}
                             <div class="plan-fact-bar">
                                 <div class="plan-fact-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
                             </div>
@@ -2355,6 +2455,368 @@
                 showToast('Veriler temizlendi');
             };
             document.getElementById('confirmModal').classList.add('active');
+        }
+
+        // ==================== PDF REPORT ====================
+        function generatePDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const isMonthly = viewMode === 'monthly';
+            const yearTx = getYearTransactions();
+            const tryRate = isMonthly
+                ? getRateForMonth('TRY', currentMonth)
+                : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+
+            // Title
+            const title = isMonthly
+                ? `Bütçe Raporu - ${monthNamesFull[currentMonth]} ${currentYear}`
+                : `Bütçe Raporu - ${currentYear} Yılı`;
+
+            doc.setFontSize(18);
+            doc.setTextColor(108, 92, 231);
+            doc.text(title, 105, 20, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}`, 105, 28, { align: 'center' });
+
+            let y = 40;
+
+            // Summary Section
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text('ÖZET', 14, y);
+            y += 8;
+
+            // Calculate totals
+            let planIncome, planExpense, factIncome, factExpense;
+
+            if (isMonthly) {
+                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+                planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
+                planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
+                factIncome = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+                factExpense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+            } else {
+                planIncome = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+                planExpense = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+                factIncome = yearTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+                factExpense = yearTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+            }
+
+            const net = factIncome - factExpense;
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 184, 148);
+            doc.text(`Gelir Planı: $${planIncome.toFixed(2)} (₺${(planIncome * tryRate).toFixed(2)})`, 14, y);
+            y += 6;
+            doc.text(`Gelir Gerçekleşen: $${factIncome.toFixed(2)} (₺${(factIncome * tryRate).toFixed(2)})`, 14, y);
+            y += 8;
+
+            doc.setTextColor(225, 112, 85);
+            doc.text(`Gider Planı: $${planExpense.toFixed(2)} (₺${(planExpense * tryRate).toFixed(2)})`, 14, y);
+            y += 6;
+            doc.text(`Gider Gerçekleşen: $${factExpense.toFixed(2)} (₺${(factExpense * tryRate).toFixed(2)})`, 14, y);
+            y += 8;
+
+            doc.setTextColor(net >= 0 ? 0 : 200, net >= 0 ? 150 : 50, net >= 0 ? 100 : 50);
+            doc.text(`Net Durum: ${net >= 0 ? '+' : ''}$${net.toFixed(2)} (₺${(net * tryRate).toFixed(2)})`, 14, y);
+            y += 12;
+
+            // Income Categories
+            doc.setFontSize(12);
+            doc.setTextColor(0, 184, 148);
+            doc.text('GELİR KALEMLERİ', 14, y);
+            y += 6;
+
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+
+            categories.income.forEach(cat => {
+                const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const txList = isMonthly
+                    ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+                    : yearTx.filter(t => t.categoryId === cat.id);
+                const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                const diff = fact - plan;
+
+                doc.text(`${cat.name}: Plan $${plan.toFixed(2)} | Gerçekleşen $${fact.toFixed(2)} | Fark ${diff >= 0 ? '+' : ''}$${diff.toFixed(2)}`, 14, y);
+                y += 5;
+
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+
+            y += 6;
+
+            // Expense Categories
+            doc.setFontSize(12);
+            doc.setTextColor(225, 112, 85);
+            doc.text('GİDER KALEMLERİ', 14, y);
+            y += 6;
+
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+
+            categories.expense.forEach(cat => {
+                const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const txList = isMonthly
+                    ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+                    : yearTx.filter(t => t.categoryId === cat.id);
+                const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                const diff = plan - fact;
+
+                doc.text(`${cat.name}: Plan $${plan.toFixed(2)} | Gerçekleşen $${fact.toFixed(2)} | Fark ${diff >= 0 ? '+' : ''}$${diff.toFixed(2)}`, 14, y);
+                y += 5;
+
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+
+            y += 8;
+
+            // Transactions
+            const txList = isMonthly
+                ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth)
+                : yearTx;
+
+            if (txList.length > 0) {
+                doc.setFontSize(12);
+                doc.setTextColor(108, 92, 231);
+                doc.text('İŞLEMLER', 14, y);
+                y += 6;
+
+                doc.setFontSize(8);
+                doc.setTextColor(100);
+
+                txList.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 30).forEach(tx => {
+                    const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
+                    const catName = cat ? cat.name : 'Bilinmiyor';
+                    const date = new Date(tx.date).toLocaleDateString('tr-TR');
+                    const sign = tx.type === 'income' ? '+' : '-';
+
+                    doc.text(`${date} | ${catName} | ${sign}$${tx.amountUSD.toFixed(2)} | ${tx.note || '-'}`, 14, y);
+                    y += 4;
+
+                    if (y > 280) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                });
+            }
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Bütçe Takip Uygulaması', 105, 290, { align: 'center' });
+
+            // Save
+            const filename = isMonthly
+                ? `butce-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}.pdf`
+                : `butce-${currentYear}-yillik.pdf`;
+
+            doc.save(filename);
+            showToast('PDF oluşturuldu ✓');
+        }
+
+        // ==================== EXCEL REPORT ====================
+        function generateExcelReport() {
+            const isMonthly = viewMode === 'monthly';
+            const yearTx = getYearTransactions();
+            const tryRate = isMonthly
+                ? getRateForMonth('TRY', currentMonth)
+                : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+
+            const wb = XLSX.utils.book_new();
+
+            // ===== ÖZET SAYFASI =====
+            const summaryData = [];
+            summaryData.push(['BÜTÇE RAPORU']);
+            summaryData.push([isMonthly ? `${monthNamesFull[currentMonth]} ${currentYear}` : `${currentYear} Yılı`]);
+            summaryData.push([`Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}`]);
+            summaryData.push([]);
+
+            // Hesaplamalar
+            let planIncome, planExpense, factIncome, factExpense;
+            if (isMonthly) {
+                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+                planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
+                planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
+                factIncome = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+                factExpense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+            } else {
+                planIncome = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+                planExpense = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+                factIncome = yearTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+                factExpense = yearTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+            }
+            const net = factIncome - factExpense;
+
+            summaryData.push(['ÖZET', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)']);
+            summaryData.push(['Gelir', planIncome.toFixed(2), (planIncome * tryRate).toFixed(2), factIncome.toFixed(2), (factIncome * tryRate).toFixed(2), (factIncome - planIncome).toFixed(2), ((factIncome - planIncome) * tryRate).toFixed(2)]);
+            summaryData.push(['Gider', planExpense.toFixed(2), (planExpense * tryRate).toFixed(2), factExpense.toFixed(2), (factExpense * tryRate).toFixed(2), (planExpense - factExpense).toFixed(2), ((planExpense - factExpense) * tryRate).toFixed(2)]);
+            summaryData.push(['Net', '', '', net.toFixed(2), (net * tryRate).toFixed(2), '', '']);
+
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+            // ===== GELİR KALEMLERİ SAYFASI =====
+            const incomeData = [];
+            incomeData.push(['GELİR KALEMLERİ']);
+            incomeData.push([]);
+            incomeData.push(['Kategori', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+
+            categories.income.forEach(cat => {
+                const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const txList = isMonthly
+                    ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+                    : yearTx.filter(t => t.categoryId === cat.id);
+                const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                const diff = fact - plan;
+
+                incomeData.push([
+                    cat.name,
+                    plan.toFixed(2),
+                    (plan * tryRate).toFixed(2),
+                    fact.toFixed(2),
+                    (fact * tryRate).toFixed(2),
+                    diff.toFixed(2),
+                    (diff * tryRate).toFixed(2),
+                    txList.length
+                ]);
+            });
+
+            const wsIncome = XLSX.utils.aoa_to_sheet(incomeData);
+            XLSX.utils.book_append_sheet(wb, wsIncome, 'Gelir Kalemleri');
+
+            // ===== GİDER KALEMLERİ SAYFASI =====
+            const expenseData = [];
+            expenseData.push(['GİDER KALEMLERİ']);
+            expenseData.push([]);
+
+            if (isMonthly) {
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                expenseData.push(['Kategori', 'Aylık Plan ($)', 'Aylık Plan (₺)', 'Günlük Limit ($)', 'Günlük Limit (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+
+                categories.expense.forEach(cat => {
+                    const plan = getCategoryMonthlyPlan(cat, currentMonth);
+                    const dailyLimit = plan / daysInMonth;
+                    const txList = yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth);
+                    const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                    const diff = plan - fact;
+
+                    expenseData.push([
+                        cat.name,
+                        plan.toFixed(2),
+                        (plan * tryRate).toFixed(2),
+                        dailyLimit.toFixed(2),
+                        (dailyLimit * tryRate).toFixed(2),
+                        fact.toFixed(2),
+                        (fact * tryRate).toFixed(2),
+                        diff.toFixed(2),
+                        (diff * tryRate).toFixed(2),
+                        txList.length
+                    ]);
+                });
+            } else {
+                expenseData.push(['Kategori', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+
+                categories.expense.forEach(cat => {
+                    const plan = getCategoryYearlyPlan(cat);
+                    const txList = yearTx.filter(t => t.categoryId === cat.id);
+                    const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                    const diff = plan - fact;
+
+                    expenseData.push([
+                        cat.name,
+                        plan.toFixed(2),
+                        (plan * tryRate).toFixed(2),
+                        fact.toFixed(2),
+                        (fact * tryRate).toFixed(2),
+                        diff.toFixed(2),
+                        (diff * tryRate).toFixed(2),
+                        txList.length
+                    ]);
+                });
+            }
+
+            const wsExpense = XLSX.utils.aoa_to_sheet(expenseData);
+            XLSX.utils.book_append_sheet(wb, wsExpense, 'Gider Kalemleri');
+
+            // ===== İŞLEMLER SAYFASI =====
+            const txData = [];
+            txData.push(['İŞLEMLER']);
+            txData.push([]);
+            txData.push(['Tarih', 'Tür', 'Kategori', 'Tutar ($)', 'Tutar (₺)', 'Orijinal Tutar', 'Para Birimi', 'Kur', 'Not']);
+
+            const txList = isMonthly
+                ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth)
+                : yearTx;
+
+            txList.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
+                const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
+                const catName = cat ? cat.name : 'Bilinmiyor';
+                const txTryRate = getRateForMonth('TRY', new Date(tx.date).getMonth());
+
+                txData.push([
+                    new Date(tx.date).toLocaleDateString('tr-TR'),
+                    tx.type === 'income' ? 'Gelir' : 'Gider',
+                    catName,
+                    tx.amountUSD.toFixed(2),
+                    (tx.amountUSD * txTryRate).toFixed(2),
+                    tx.amount.toFixed(2),
+                    tx.currency,
+                    tx.rateAtTime?.toFixed(2) || '-',
+                    tx.note || ''
+                ]);
+            });
+
+            const wsTx = XLSX.utils.aoa_to_sheet(txData);
+            XLSX.utils.book_append_sheet(wb, wsTx, 'İşlemler');
+
+            // ===== AYLIK BÜTÇELER SAYFASI =====
+            const monthlyBudgetData = [];
+            monthlyBudgetData.push(['AYLIK BÜTÇELER (USD)']);
+            monthlyBudgetData.push([]);
+            monthlyBudgetData.push(['Kategori', 'Tür', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara', 'Yıllık Toplam']);
+
+            [...categories.income, ...categories.expense].forEach(cat => {
+                const type = categories.income.includes(cat) ? 'Gelir' : 'Gider';
+                const row = [cat.name, type];
+                for (let i = 0; i < 12; i++) {
+                    row.push(getCategoryMonthlyPlan(cat, i).toFixed(2));
+                }
+                row.push(getCategoryYearlyPlan(cat).toFixed(2));
+                monthlyBudgetData.push(row);
+            });
+
+            const wsMonthlyBudget = XLSX.utils.aoa_to_sheet(monthlyBudgetData);
+            XLSX.utils.book_append_sheet(wb, wsMonthlyBudget, 'Aylık Bütçeler');
+
+            // ===== KURLAR SAYFASI =====
+            const ratesData = [];
+            ratesData.push(['DÖVİZ KURLARI (1 USD = ?)']);
+            ratesData.push([]);
+            ratesData.push(['Ay', 'TRY', 'RUB']);
+            for (let i = 0; i < 12; i++) {
+                ratesData.push([monthNamesFull[i], monthlyRates.TRY[i].toFixed(2), monthlyRates.RUB[i].toFixed(2)]);
+            }
+
+            const wsRates = XLSX.utils.aoa_to_sheet(ratesData);
+            XLSX.utils.book_append_sheet(wb, wsRates, 'Kurlar');
+
+            // Dosyayı kaydet
+            const filename = isMonthly
+                ? `butce-${currentYear}-${String(currentMonth + 1).padStart(2, '0')}.xlsx`
+                : `butce-${currentYear}-yillik.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            showToast('Excel oluşturuldu ✓');
         }
 
         function saveRates() {
