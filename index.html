@@ -1737,6 +1737,7 @@
         // ==================== BUDGETS ====================
         function renderBudgets() {
             const yearTx = getYearTransactions();
+            const isMonthly = viewMode === 'monthly';
 
             ['income', 'expense'].forEach(type => {
                 const container = document.getElementById(`${type}Budgets`);
@@ -1752,23 +1753,32 @@
                     return;
                 }
 
-                // Ortalama TRY kuru
-                const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+                // TRY kuru (aylık veya yıllık ortalama)
+                const tryRate = isMonthly
+                    ? getRateForMonth('TRY', currentMonth)
+                    : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
 
                 container.innerHTML = cats.map(cat => {
-                    const yearlyBudget = getCategoryYearlyPlan(cat);
-                    const monthlySum = cat.monthlyBudgets ? cat.monthlyBudgets.reduce((a, b) => a + b, 0) : 0;
-                    const fact = yearTx.filter(t => t.categoryId === cat.id).reduce((sum, t) => sum + t.amountUSD, 0);
-                    const diff = type === 'income' ? fact - yearlyBudget : yearlyBudget - fact;
-                    const percent = yearlyBudget > 0 ? (fact / yearlyBudget) * 100 : 0;
+                    // Plan değeri (aylık veya yıllık)
+                    const plan = isMonthly
+                        ? getCategoryMonthlyPlan(cat, currentMonth)
+                        : getCategoryYearlyPlan(cat);
+
+                    // İşlemler (aylık veya yıllık)
+                    const txList = isMonthly
+                        ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
+                        : yearTx.filter(t => t.categoryId === cat.id);
+
+                    const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
+                    const diff = type === 'income' ? fact - plan : plan - fact;
+                    const percent = plan > 0 ? (fact / plan) * 100 : 0;
 
                     let barClass = type === 'expense'
                         ? (percent > 100 ? 'over' : percent > 80 ? 'warning' : 'under')
                         : (percent >= 100 ? 'under' : percent > 50 ? 'warning' : 'over');
 
-                    const subtitle = monthlySum > 0
-                        ? `Aylık: ${formatCurrency(monthlySum)} • ${yearTx.filter(t => t.categoryId === cat.id).length} işlem`
-                        : `${yearTx.filter(t => t.categoryId === cat.id).length} işlem`;
+                    const planLabel = isMonthly ? 'Aylık Plan' : 'Yıllık Plan';
+                    const subtitle = `${txList.length} işlem`;
 
                     return `
                         <div class="budget-item">
@@ -1793,19 +1803,19 @@
                             </div>
                             <div class="budget-stats">
                                 <div class="stat-box">
-                                    <div class="stat-label">Yıllık Plan</div>
-                                    <div class="stat-value plan">${formatCurrency(yearlyBudget)}</div>
-                                    <div class="stat-sub">${formatCurrency(yearlyBudget * avgTryRate, 'TRY')}</div>
+                                    <div class="stat-label">${planLabel}</div>
+                                    <div class="stat-value plan">${formatCurrency(plan)}</div>
+                                    <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')}</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Gerçekleşen</div>
                                     <div class="stat-value fact">${formatCurrency(fact)}</div>
-                                    <div class="stat-sub">${formatCurrency(fact * avgTryRate, 'TRY')}</div>
+                                    <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')}</div>
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Fark</div>
                                     <div class="stat-value diff ${diff >= 0 ? 'positive' : 'negative'}">${diff >= 0 ? '+' : ''}${formatCurrency(diff)}</div>
-                                    <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * avgTryRate, 'TRY')}</div>
+                                    <div class="stat-sub">${diff >= 0 ? '+' : ''}${formatCurrency(diff * tryRate, 'TRY')}</div>
                                 </div>
                             </div>
                             <div class="plan-fact-bar">
