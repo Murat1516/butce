@@ -489,6 +489,207 @@
             opacity: 0.7;
         }
 
+        /* Bütçe Özeti Stili */
+        .budget-summary-section {
+            margin: 16px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .summary-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-main);
+        }
+
+        .currency-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .currency-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+        }
+
+        .currency-card.usd { border-color: #27ae60; }
+        .currency-card.try { border-color: #e74c3c; }
+        .currency-card.rub { border-color: #3498db; }
+
+        .currency-symbol {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .currency-card.usd .currency-symbol { color: #27ae60; }
+        .currency-card.try .currency-symbol { color: #e74c3c; }
+        .currency-card.rub .currency-symbol { color: #3498db; }
+
+        .currency-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .currency-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 3px 0;
+            border-bottom: 1px dotted var(--border-color);
+        }
+
+        .currency-row:last-child {
+            border-bottom: none;
+            padding-top: 6px;
+            font-weight: 700;
+        }
+
+        .currency-row.income { color: var(--accent-income); }
+        .currency-row.expense { color: var(--accent-expense); }
+        .currency-row.net.positive { color: var(--accent-income); }
+        .currency-row.net.negative { color: var(--accent-expense); }
+
+        .original-currency {
+            font-size: 0.7rem;
+            color: var(--accent-main);
+            font-weight: 600;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Cash Flow Stili */
+        .cashflow-section {
+            margin: 16px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .cashflow-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 12px;
+        }
+
+        .cashflow-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            min-width: 600px;
+        }
+
+        .cashflow-table th,
+        .cashflow-table td {
+            padding: 8px 6px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cashflow-table th {
+            background: var(--accent-main);
+            color: white;
+            font-weight: 700;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+        }
+
+        .cashflow-table th:first-child,
+        .cashflow-table td:first-child {
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .cashflow-table tbody tr:nth-child(even) {
+            background: var(--bg-secondary);
+        }
+
+        .cashflow-table tbody tr:hover {
+            background: var(--accent-main-light);
+        }
+
+        .cashflow-table tbody tr.current-month {
+            background: var(--accent-warning-light);
+            font-weight: 700;
+        }
+
+        .cashflow-table .positive {
+            color: var(--accent-income);
+        }
+
+        .cashflow-table .negative {
+            color: var(--accent-expense);
+        }
+
+        .cashflow-table tfoot {
+            background: var(--bg-secondary);
+            font-weight: 700;
+        }
+
+        .cashflow-table tfoot td {
+            border-top: 2px solid var(--accent-main);
+            padding: 10px 6px;
+        }
+
+        .cashflow-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .cashflow-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .cashflow-card.savings {
+            border: 2px solid var(--accent-income);
+        }
+
+        .cashflow-card.spending {
+            border: 2px solid var(--accent-expense);
+        }
+
+        .cashflow-card-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .cashflow-card-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .cashflow-card.savings .cashflow-card-value {
+            color: var(--accent-income);
+        }
+
+        .cashflow-card.spending .cashflow-card-value {
+            color: var(--accent-expense);
+        }
+
+        .cashflow-card-sub {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
         .action-btn {
             background: none;
             border: none;
@@ -1110,10 +1311,10 @@
         <div class="summary-card income">
             <div class="label" id="incomeLabel">Aylık Gelir Planı</div>
             <div class="amount" id="planIncome">$0</div>
-            <div class="sub-amount" id="planIncomeTRY">₺0</div>
+            <div class="sub-amount" id="planIncomeSub">₺0 / ₽0</div>
             <div class="fact-row" id="factIncomeRow">
                 <span id="factIncome">Gerçekleşen: $0</span>
-                <span id="factIncomeTRY">₺0</span>
+                <span id="factIncomeSub">₺0 / ₽0</span>
             </div>
             <div class="plan-fact-bar">
                 <div class="plan-fact-fill under" id="incomeBar" style="width: 0%"></div>
@@ -1122,10 +1323,10 @@
         <div class="summary-card expense">
             <div class="label" id="expenseLabel">Aylık Gider Planı</div>
             <div class="amount" id="planExpense">$0</div>
-            <div class="sub-amount" id="planExpenseTRY">₺0</div>
+            <div class="sub-amount" id="planExpenseSub">₺0 / ₽0</div>
             <div class="fact-row" id="factExpenseRow">
                 <span id="factExpense">Gerçekleşen: $0</span>
-                <span id="factExpenseTRY">₺0</span>
+                <span id="factExpenseSub">₺0 / ₽0</span>
             </div>
             <div class="plan-fact-bar">
                 <div class="plan-fact-fill under" id="expenseBar" style="width: 0%"></div>
@@ -1134,8 +1335,38 @@
         <div class="summary-card full">
             <div class="label">Net Durum (Gerçekleşen)</div>
             <div class="amount positive" id="netBalance">$0</div>
-            <div class="sub-amount" id="netBalanceTRY">₺0</div>
+            <div class="sub-amount" id="netBalanceSub">₺0 / ₽0</div>
         </div>
+    </div>
+
+    <!-- Bütçe Özeti - Para Birimi Bazında -->
+    <div class="budget-summary-section" id="budgetSummarySection">
+        <div class="summary-title">📊 Bütçe Özeti (Para Birimi Bazında)</div>
+        <div class="currency-summary-grid" id="currencySummaryGrid"></div>
+    </div>
+
+    <!-- Aylık Cash Flow -->
+    <div class="cashflow-section" id="cashflowSection">
+        <div class="summary-title">💰 Aylık Nakit Akışı (Cash Flow)</div>
+        <div class="cashflow-table-wrapper">
+            <table class="cashflow-table" id="cashflowTable">
+                <thead>
+                    <tr>
+                        <th>Ay</th>
+                        <th>Gelir Plan</th>
+                        <th>Gelir Gerç.</th>
+                        <th>Gider Plan</th>
+                        <th>Gider Gerç.</th>
+                        <th>Net Plan</th>
+                        <th>Net Gerç.</th>
+                        <th>Kümülatif</th>
+                    </tr>
+                </thead>
+                <tbody id="cashflowBody"></tbody>
+                <tfoot id="cashflowFoot"></tfoot>
+            </table>
+        </div>
+        <div class="cashflow-summary" id="cashflowSummary"></div>
     </div>
 
     <!-- Grafikler -->
@@ -1553,24 +1784,27 @@
             const yearTx = getYearTransactions();
 
             let planIncome, planExpense, factIncome, factExpense;
-            let avgTryRate;
+            let avgTryRate, avgRubRate;
+            let txList;
 
             if (viewMode === 'monthly') {
                 // Aylık modda
-                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
+                txList = yearTx.filter(t => new Date(t.date).getMonth() === currentMonth);
 
                 planIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
                 planExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0);
-                factIncome = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
-                factExpense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+                factIncome = txList.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+                factExpense = txList.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
 
                 // Aylık kur
                 avgTryRate = getRateForMonth('TRY', currentMonth);
+                avgRubRate = getRateForMonth('RUB', currentMonth);
 
                 document.getElementById('incomeLabel').textContent = 'Aylık Gelir Planı';
                 document.getElementById('expenseLabel').textContent = 'Aylık Gider Planı';
             } else {
                 // Yıllık modda
+                txList = yearTx;
                 planIncome = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
                 planExpense = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
                 factIncome = yearTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
@@ -1578,6 +1812,7 @@
 
                 // Yıllık ortalama kur
                 avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+                avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
                 document.getElementById('incomeLabel').textContent = 'Yıllık Gelir Planı';
                 document.getElementById('expenseLabel').textContent = 'Yıllık Gider Planı';
@@ -1591,17 +1826,17 @@
             document.getElementById('planExpense').textContent = formatCurrency(planExpense);
             document.getElementById('factExpense').textContent = `Gerçekleşen: ${formatCurrency(factExpense)}`;
 
-            // TRY values
-            document.getElementById('planIncomeTRY').textContent = formatCurrency(planIncome * avgTryRate, 'TRY');
-            document.getElementById('factIncomeTRY').textContent = formatCurrency(factIncome * avgTryRate, 'TRY');
-            document.getElementById('planExpenseTRY').textContent = formatCurrency(planExpense * avgTryRate, 'TRY');
-            document.getElementById('factExpenseTRY').textContent = formatCurrency(factExpense * avgTryRate, 'TRY');
+            // TRY ve RUB values
+            document.getElementById('planIncomeSub').textContent = `${formatCurrency(planIncome * avgTryRate, 'TRY')} / ${formatCurrency(planIncome * avgRubRate, 'RUB')}`;
+            document.getElementById('factIncomeSub').textContent = `${formatCurrency(factIncome * avgTryRate, 'TRY')} / ${formatCurrency(factIncome * avgRubRate, 'RUB')}`;
+            document.getElementById('planExpenseSub').textContent = `${formatCurrency(planExpense * avgTryRate, 'TRY')} / ${formatCurrency(planExpense * avgRubRate, 'RUB')}`;
+            document.getElementById('factExpenseSub').textContent = `${formatCurrency(factExpense * avgTryRate, 'TRY')} / ${formatCurrency(factExpense * avgRubRate, 'RUB')}`;
 
             const netEl = document.getElementById('netBalance');
             netEl.textContent = (net >= 0 ? '+' : '-') + formatCurrency(Math.abs(net));
             netEl.className = 'amount ' + (net >= 0 ? 'positive' : 'negative');
 
-            document.getElementById('netBalanceTRY').textContent = (net >= 0 ? '+' : '-') + formatCurrency(Math.abs(net) * avgTryRate, 'TRY');
+            document.getElementById('netBalanceSub').textContent = `${net >= 0 ? '+' : '-'}${formatCurrency(Math.abs(net) * avgTryRate, 'TRY')} / ${net >= 0 ? '+' : '-'}${formatCurrency(Math.abs(net) * avgRubRate, 'RUB')}`;
 
             // Income progress bar
             const incomePercent = planIncome > 0 ? (factIncome / planIncome) * 100 : 0;
@@ -1615,8 +1850,188 @@
             expenseBar.style.width = Math.min(expensePercent, 100) + '%';
             expenseBar.className = 'plan-fact-fill ' + (expensePercent > 100 ? 'over' : expensePercent > 80 ? 'warning' : 'under');
 
+            // Bütçe Özeti - Para Birimi Bazında
+            updateCurrencySummary(txList, avgTryRate, avgRubRate);
+
+            // Cash Flow güncelle
+            updateCashFlow();
+
             // Update chart
             updateChart();
+        }
+
+        function updateCurrencySummary(txList, tryRate, rubRate) {
+            const container = document.getElementById('currencySummaryGrid');
+
+            // Her para biriminde orijinal tutarları hesapla
+            const byCurrency = { USD: { income: 0, expense: 0 }, TRY: { income: 0, expense: 0 }, RUB: { income: 0, expense: 0 } };
+
+            txList.forEach(t => {
+                if (byCurrency[t.currency]) {
+                    byCurrency[t.currency][t.type] += t.amount;
+                }
+            });
+
+            // USD karşılıkları hesapla
+            const usdIncome = byCurrency.USD.income + (byCurrency.TRY.income / tryRate) + (byCurrency.RUB.income / rubRate);
+            const usdExpense = byCurrency.USD.expense + (byCurrency.TRY.expense / tryRate) + (byCurrency.RUB.expense / rubRate);
+
+            container.innerHTML = `
+                <div class="currency-card usd">
+                    <div class="currency-symbol">$</div>
+                    <div class="currency-label">Dolar (USD)</div>
+                    <div class="currency-row income">
+                        <span>Gelir:</span>
+                        <span>$${byCurrency.USD.income.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row expense">
+                        <span>Gider:</span>
+                        <span>$${byCurrency.USD.expense.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row net ${(byCurrency.USD.income - byCurrency.USD.expense) >= 0 ? 'positive' : 'negative'}">
+                        <span>Net:</span>
+                        <span>${(byCurrency.USD.income - byCurrency.USD.expense) >= 0 ? '+' : ''}$${(byCurrency.USD.income - byCurrency.USD.expense).toFixed(0)}</span>
+                    </div>
+                </div>
+                <div class="currency-card try">
+                    <div class="currency-symbol">₺</div>
+                    <div class="currency-label">Türk Lirası (TRY)</div>
+                    <div class="currency-row income">
+                        <span>Gelir:</span>
+                        <span>₺${byCurrency.TRY.income.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row expense">
+                        <span>Gider:</span>
+                        <span>₺${byCurrency.TRY.expense.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row net ${(byCurrency.TRY.income - byCurrency.TRY.expense) >= 0 ? 'positive' : 'negative'}">
+                        <span>Net:</span>
+                        <span>${(byCurrency.TRY.income - byCurrency.TRY.expense) >= 0 ? '+' : ''}₺${(byCurrency.TRY.income - byCurrency.TRY.expense).toFixed(0)}</span>
+                    </div>
+                </div>
+                <div class="currency-card rub">
+                    <div class="currency-symbol">₽</div>
+                    <div class="currency-label">Ruble (RUB)</div>
+                    <div class="currency-row income">
+                        <span>Gelir:</span>
+                        <span>₽${byCurrency.RUB.income.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row expense">
+                        <span>Gider:</span>
+                        <span>₽${byCurrency.RUB.expense.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row net ${(byCurrency.RUB.income - byCurrency.RUB.expense) >= 0 ? 'positive' : 'negative'}">
+                        <span>Net:</span>
+                        <span>${(byCurrency.RUB.income - byCurrency.RUB.expense) >= 0 ? '+' : ''}₽${(byCurrency.RUB.income - byCurrency.RUB.expense).toFixed(0)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCashFlow() {
+            const yearTx = getYearTransactions();
+            const tbody = document.getElementById('cashflowBody');
+            const tfoot = document.getElementById('cashflowFoot');
+            const summary = document.getElementById('cashflowSummary');
+
+            const today = new Date();
+            const thisMonth = today.getMonth();
+
+            let rows = '';
+            let totalIncomePlan = 0, totalIncomeActual = 0;
+            let totalExpensePlan = 0, totalExpenseActual = 0;
+            let cumulativePlan = 0, cumulativeActual = 0;
+
+            // Her ay için hesapla
+            for (let i = 0; i < 12; i++) {
+                const monthTx = yearTx.filter(t => new Date(t.date).getMonth() === i);
+
+                const incomePlan = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+                const incomeActual = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+
+                const expensePlan = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+                const expenseActual = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
+
+                const netPlan = incomePlan - expensePlan;
+                const netActual = incomeActual - expenseActual;
+
+                cumulativePlan += netPlan;
+                cumulativeActual += netActual;
+
+                totalIncomePlan += incomePlan;
+                totalIncomeActual += incomeActual;
+                totalExpensePlan += expensePlan;
+                totalExpenseActual += expenseActual;
+
+                const isCurrentMonth = (today.getFullYear() === currentYear && i === thisMonth);
+                const isFutureMonth = (today.getFullYear() === currentYear && i > thisMonth) || (today.getFullYear() < currentYear);
+
+                rows += `
+                    <tr class="${isCurrentMonth ? 'current-month' : ''}">
+                        <td>${monthNames[i]}</td>
+                        <td>$${incomePlan.toFixed(0)}</td>
+                        <td class="${incomeActual > 0 ? 'positive' : ''}">${isFutureMonth && incomeActual === 0 ? '-' : '$' + incomeActual.toFixed(0)}</td>
+                        <td>$${expensePlan.toFixed(0)}</td>
+                        <td class="${expenseActual > 0 ? 'negative' : ''}">${isFutureMonth && expenseActual === 0 ? '-' : '$' + expenseActual.toFixed(0)}</td>
+                        <td class="${netPlan >= 0 ? 'positive' : 'negative'}">${netPlan >= 0 ? '+' : ''}$${netPlan.toFixed(0)}</td>
+                        <td class="${netActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '-' : (netActual >= 0 ? '+' : '') + '$' + netActual.toFixed(0)}</td>
+                        <td class="${cumulativeActual >= 0 ? 'positive' : 'negative'}">${isFutureMonth && incomeActual === 0 && expenseActual === 0 ? '($' + cumulativePlan.toFixed(0) + ')' : (cumulativeActual >= 0 ? '+' : '') + '$' + cumulativeActual.toFixed(0)}</td>
+                    </tr>
+                `;
+            }
+
+            tbody.innerHTML = rows;
+
+            // Toplam satırı
+            const totalNetPlan = totalIncomePlan - totalExpensePlan;
+            const totalNetActual = totalIncomeActual - totalExpenseActual;
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td>TOPLAM</td>
+                    <td>$${totalIncomePlan.toFixed(0)}</td>
+                    <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
+                    <td>$${totalExpensePlan.toFixed(0)}</td>
+                    <td class="negative">$${totalExpenseActual.toFixed(0)}</td>
+                    <td class="${totalNetPlan >= 0 ? 'positive' : 'negative'}">${totalNetPlan >= 0 ? '+' : ''}$${totalNetPlan.toFixed(0)}</td>
+                    <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
+                    <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
+                </tr>
+            `;
+
+            // TRY ve RUB için ortalama kur
+            const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+            const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+
+            // Tasarruf özeti
+            const yearlySavingsPlan = totalNetPlan;
+            const yearlySavingsActual = totalNetActual;
+            const monthlySavingsPlan = yearlySavingsPlan / 12;
+            const remainingMonths = 12 - thisMonth - 1;
+            const projectedSavings = totalNetActual + (remainingMonths * monthlySavingsPlan);
+
+            summary.innerHTML = `
+                <div class="cashflow-card savings">
+                    <div class="cashflow-card-title">📈 Yıllık Tasarruf Planı</div>
+                    <div class="cashflow-card-value">${yearlySavingsPlan >= 0 ? '+' : ''}$${yearlySavingsPlan.toFixed(0)}</div>
+                    <div class="cashflow-card-sub">₺${(yearlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(yearlySavingsPlan * avgRubRate).toFixed(0)}</div>
+                </div>
+                <div class="cashflow-card ${yearlySavingsActual >= 0 ? 'savings' : 'spending'}">
+                    <div class="cashflow-card-title">💰 Gerçekleşen Tasarruf</div>
+                    <div class="cashflow-card-value">${yearlySavingsActual >= 0 ? '+' : ''}$${yearlySavingsActual.toFixed(0)}</div>
+                    <div class="cashflow-card-sub">₺${(yearlySavingsActual * avgTryRate).toFixed(0)} / ₽${(yearlySavingsActual * avgRubRate).toFixed(0)}</div>
+                </div>
+                <div class="cashflow-card savings">
+                    <div class="cashflow-card-title">🎯 Aylık Tasarruf Hedefi</div>
+                    <div class="cashflow-card-value">${monthlySavingsPlan >= 0 ? '+' : ''}$${monthlySavingsPlan.toFixed(0)}</div>
+                    <div class="cashflow-card-sub">₺${(monthlySavingsPlan * avgTryRate).toFixed(0)} / ₽${(monthlySavingsPlan * avgRubRate).toFixed(0)}</div>
+                </div>
+                <div class="cashflow-card ${projectedSavings >= 0 ? 'savings' : 'spending'}">
+                    <div class="cashflow-card-title">🔮 Yıl Sonu Tahmini</div>
+                    <div class="cashflow-card-value">${projectedSavings >= 0 ? '+' : ''}$${projectedSavings.toFixed(0)}</div>
+                    <div class="cashflow-card-sub">₺${(projectedSavings * avgTryRate).toFixed(0)} / ₽${(projectedSavings * avgRubRate).toFixed(0)}</div>
+                </div>
+            `;
         }
 
         function updateChart() {
@@ -1753,6 +2168,9 @@
                     categoryLabels.push('Veri yok');
                 }
 
+                const totalExpense = expenseByCategory.reduce((a, b) => a + b, 0);
+                const tryRate = getRateForMonth('TRY', currentMonth);
+
                 monthlyChart = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
@@ -1775,7 +2193,33 @@
                                     color: textColor,
                                     font: { size: 10, family: 'Nunito' },
                                     boxWidth: 12,
-                                    padding: 6
+                                    padding: 6,
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const value = data.datasets[0].data[i];
+                                                const percent = totalExpense > 0 ? ((value / totalExpense) * 100).toFixed(0) : 0;
+                                                return {
+                                                    text: `${label} (${percent}%)`,
+                                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed;
+                                        const percent = totalExpense > 0 ? ((value / totalExpense) * 100).toFixed(1) : 0;
+                                        const tryValue = value * tryRate;
+                                        return `$${value.toFixed(2)} (₺${tryValue.toFixed(0)}) - %${percent}`;
+                                    }
                                 }
                             }
                         }
@@ -1827,6 +2271,24 @@
                     const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
                     const diff = type === 'income' ? fact - plan : plan - fact;
                     const percent = plan > 0 ? (fact / plan) * 100 : 0;
+
+                    // Orijinal para birimlerinde gerçekleşen tutarlar
+                    const factByCurrency = { USD: 0, TRY: 0, RUB: 0 };
+                    txList.forEach(t => {
+                        if (factByCurrency[t.currency] !== undefined) {
+                            factByCurrency[t.currency] += t.amount;
+                        }
+                    });
+
+                    // Orijinal para birimi gösterimi
+                    let originalCurrencyHtml = '';
+                    const parts = [];
+                    if (factByCurrency.USD > 0) parts.push(`$${factByCurrency.USD.toFixed(0)}`);
+                    if (factByCurrency.TRY > 0) parts.push(`₺${factByCurrency.TRY.toFixed(0)}`);
+                    if (factByCurrency.RUB > 0) parts.push(`₽${factByCurrency.RUB.toFixed(0)}`);
+                    if (parts.length > 0) {
+                        originalCurrencyHtml = `<div class="original-currency">📌 ${parts.join(' + ')}</div>`;
+                    }
 
                     let barClass = type === 'expense'
                         ? (percent > 100 ? 'over' : percent > 80 ? 'warning' : 'under')
@@ -1910,6 +2372,7 @@
                                     <div class="stat-label">Gerçekleşen</div>
                                     <div class="stat-value fact">${formatCurrency(fact)}</div>
                                     <div class="stat-sub">${formatCurrency(fact * tryRate, 'TRY')} / ${formatCurrency(fact * rubRate, 'RUB')}</div>
+                                    ${originalCurrencyHtml}
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Fark</div>
