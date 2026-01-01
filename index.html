@@ -1767,15 +1767,21 @@
 
         // ==================== SUMMARY ====================
         function getCategoryYearlyPlan(cat) {
-            // Yıllık bütçe varsa onu kullan, yoksa aylık bütçelerin toplamını
+            // Önce monthlyBudgets varsa onların toplamını kullan
+            if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
+                return cat.monthlyBudgets.reduce((a, b) => a + b, 0);
+            }
+            // Yoksa yearlyBudget kullan
             if (cat.yearlyBudget) return cat.yearlyBudget;
-            if (cat.monthlyBudgets) return cat.monthlyBudgets.reduce((a, b) => a + b, 0);
             return 0;
         }
 
         function getCategoryMonthlyPlan(cat, month) {
-            // Belirli ay için planlanan bütçe
-            if (cat.monthlyBudgets && cat.monthlyBudgets[month]) return cat.monthlyBudgets[month];
+            // Önce monthlyBudgets varsa o ayın değerini kullan
+            if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
+                return cat.monthlyBudgets[month] || 0;
+            }
+            // Yoksa yearlyBudget'i 12'ye böl
             if (cat.yearlyBudget) return cat.yearlyBudget / 12;
             return 0;
         }
@@ -1982,18 +1988,20 @@
 
             tbody.innerHTML = rows;
 
-            // Toplam satırı
-            const totalNetPlan = totalIncomePlan - totalExpensePlan;
+            // Toplam satırı - getCategoryYearlyPlan kullanarak özet kartlarıyla tutarlı hesaplama
+            const yearlyIncomePlan = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+            const yearlyExpensePlan = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+            const yearlyNetPlan = yearlyIncomePlan - yearlyExpensePlan;
             const totalNetActual = totalIncomeActual - totalExpenseActual;
 
             tfoot.innerHTML = `
                 <tr>
                     <td>TOPLAM</td>
-                    <td>$${totalIncomePlan.toFixed(0)}</td>
+                    <td>$${yearlyIncomePlan.toFixed(0)}</td>
                     <td class="positive">$${totalIncomeActual.toFixed(0)}</td>
-                    <td>$${totalExpensePlan.toFixed(0)}</td>
+                    <td>$${yearlyExpensePlan.toFixed(0)}</td>
                     <td class="negative">$${totalExpenseActual.toFixed(0)}</td>
-                    <td class="${totalNetPlan >= 0 ? 'positive' : 'negative'}">${totalNetPlan >= 0 ? '+' : ''}$${totalNetPlan.toFixed(0)}</td>
+                    <td class="${yearlyNetPlan >= 0 ? 'positive' : 'negative'}">${yearlyNetPlan >= 0 ? '+' : ''}$${yearlyNetPlan.toFixed(0)}</td>
                     <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
                     <td class="${totalNetActual >= 0 ? 'positive' : 'negative'}">${totalNetActual >= 0 ? '+' : ''}$${totalNetActual.toFixed(0)}</td>
                 </tr>
@@ -2003,8 +2011,8 @@
             const avgTryRate = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
             const avgRubRate = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-            // Tasarruf özeti
-            const yearlySavingsPlan = totalNetPlan;
+            // Tasarruf özeti - yıllık plan değerlerini kullan (özet kartlarıyla tutarlı)
+            const yearlySavingsPlan = yearlyNetPlan;
             const yearlySavingsActual = totalNetActual;
             const monthlySavingsPlan = yearlySavingsPlan / 12;
             const remainingMonths = 12 - thisMonth - 1;
