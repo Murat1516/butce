@@ -945,6 +945,48 @@
             color: var(--accent-main);
         }
 
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%);
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
         .submit-btn {
             width: 100%;
             padding: 18px;
@@ -1528,6 +1570,19 @@
             <div class="form-group">
                 <label id="editMonthlyBudgetLabel">Aylık Bütçeler ($) <button type="button" class="fill-equal-btn" onclick="fillEqualMonthlyEdit()">Eşit Dağıt</button></label>
                 <div class="monthly-grid" id="editMonthlyBudgetGrid"></div>
+            </div>
+            <div class="form-group">
+                <label class="toggle-label">
+                    <span>📅 Günlük Takip</span>
+                    <small style="display: block; color: var(--text-secondary); font-weight: normal; font-size: 0.8rem; margin-top: 4px;">Yemek, ulaşım gibi günlük harcamalar için açın. Kira, fatura gibi tek seferlik ödemeler için kapalı bırakın.</small>
+                </label>
+                <div class="toggle-switch-container" style="display: flex; align-items: center; margin-top: 8px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="editDailyTracking" onchange="updateDailyTrackingStatus()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="dailyTrackingStatus" style="margin-left: 12px; font-size: 0.9rem;">Kapalı</span>
+                </div>
             </div>
             <button class="submit-btn" onclick="updateCategory()">Güncelle</button>
         </div>
@@ -2396,9 +2451,9 @@
                     const planLabel = isMonthly ? 'Aylık Plan' : 'Yıllık Plan';
                     const subtitle = `${txList.length} işlem`;
 
-                    // Günlük limit hesaplama (sadece aylık görünüm ve gider için)
+                    // Günlük limit hesaplama (sadece aylık görünüm, gider ve günlük takip açık olanlar için)
                     let dailySection = '';
-                    if (isMonthly && type === 'expense' && plan > 0) {
+                    if (isMonthly && type === 'expense' && plan > 0 && cat.dailyTracking) {
                         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
                         const today = new Date();
                         const currentDay = (today.getFullYear() === currentYear && today.getMonth() === currentMonth)
@@ -2875,9 +2930,21 @@
             }
 
             updateEditCategoryCurrencyUI();
+
+            // Günlük takip ayarını oku
+            const dailyTracking = cat.dailyTracking !== undefined ? cat.dailyTracking : false;
+            document.getElementById('editDailyTracking').checked = dailyTracking;
+            updateDailyTrackingStatus();
+
             // Modal başlığına yılı ekle
             document.querySelector('#editBudgetModal .modal-header h2').textContent = `${currentYear} Bütçesi Düzenle`;
             document.getElementById('editBudgetModal').classList.add('active');
+        }
+
+        function updateDailyTrackingStatus() {
+            const isChecked = document.getElementById('editDailyTracking').checked;
+            document.getElementById('dailyTrackingStatus').textContent = isChecked ? 'Açık' : 'Kapalı';
+            document.getElementById('dailyTrackingStatus').style.color = isChecked ? 'var(--accent-main)' : 'var(--text-secondary)';
         }
 
         function setEditCategoryCurrency(currency) {
@@ -2970,10 +3037,13 @@
                 });
             }
 
+            const dailyTracking = document.getElementById('editDailyTracking').checked;
+
             ['income', 'expense'].forEach(type => {
                 const cat = categories[type].find(c => c.id === editingCategoryId);
                 if (cat) {
                     cat.name = name;
+                    cat.dailyTracking = dailyTracking; // Günlük takip ayarı
                     // Yıl bazında bütçe kaydet
                     if (!cat.budgets) cat.budgets = {};
                     cat.budgets[currentYear] = {
