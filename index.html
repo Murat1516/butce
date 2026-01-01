@@ -1766,24 +1766,50 @@
         }
 
         // ==================== SUMMARY ====================
-        function getCategoryYearlyPlan(cat) {
-            // Önce monthlyBudgets varsa onların toplamını kullan
+        function getCategoryYearlyPlan(cat, year = currentYear) {
+            // Yıl bazında bütçe kontrolü
+            const yearBudget = cat.budgets && cat.budgets[year];
+            if (yearBudget) {
+                // Bu yıl için özel bütçe varsa
+                if (yearBudget.monthlyBudgets && yearBudget.monthlyBudgets.length === 12) {
+                    return yearBudget.monthlyBudgets.reduce((a, b) => a + b, 0);
+                }
+                if (yearBudget.yearlyBudget) return yearBudget.yearlyBudget;
+            }
+            // Eski format desteği (geriye uyumluluk)
             if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
                 return cat.monthlyBudgets.reduce((a, b) => a + b, 0);
             }
-            // Yoksa yearlyBudget kullan
             if (cat.yearlyBudget) return cat.yearlyBudget;
             return 0;
         }
 
-        function getCategoryMonthlyPlan(cat, month) {
-            // Önce monthlyBudgets varsa o ayın değerini kullan
+        function getCategoryMonthlyPlan(cat, month, year = currentYear) {
+            // Yıl bazında bütçe kontrolü
+            const yearBudget = cat.budgets && cat.budgets[year];
+            if (yearBudget) {
+                // Bu yıl için özel bütçe varsa
+                if (yearBudget.monthlyBudgets && yearBudget.monthlyBudgets.length === 12) {
+                    return yearBudget.monthlyBudgets[month] || 0;
+                }
+                if (yearBudget.yearlyBudget) return yearBudget.yearlyBudget / 12;
+            }
+            // Eski format desteği (geriye uyumluluk)
             if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
                 return cat.monthlyBudgets[month] || 0;
             }
-            // Yoksa yearlyBudget'i 12'ye böl
             if (cat.yearlyBudget) return cat.yearlyBudget / 12;
             return 0;
+        }
+
+        function getCategoryBudgetCurrency(cat, year = currentYear) {
+            // Yıl bazında bütçe para birimi
+            const yearBudget = cat.budgets && cat.budgets[year];
+            if (yearBudget && yearBudget.budgetCurrency) {
+                return yearBudget.budgetCurrency;
+            }
+            // Eski format desteği
+            return cat.budgetCurrency || 'USD';
         }
 
         function updateSummary() {
@@ -2321,7 +2347,7 @@
                         }
                     });
 
-                    // Orijinal para birimi gösterimi
+                    // Orijinal para birimi gösterimi (Gerçekleşen)
                     let originalCurrencyHtml = '';
                     const parts = [];
                     if (factByCurrency.USD > 0) parts.push(`$${factByCurrency.USD.toFixed(0)}`);
@@ -2329,6 +2355,21 @@
                     if (factByCurrency.RUB > 0) parts.push(`₽${factByCurrency.RUB.toFixed(0)}`);
                     if (parts.length > 0) {
                         originalCurrencyHtml = `<div class="original-currency">📌 ${parts.join(' + ')}</div>`;
+                    }
+
+                    // Plan için orijinal para birimi gösterimi
+                    let planOriginalHtml = '';
+                    const budgetCurrency = getCategoryBudgetCurrency(cat, currentYear);
+                    if (budgetCurrency && budgetCurrency !== 'USD' && plan > 0) {
+                        // Bütçe orijinal para birimindeyse, o para biriminde göster
+                        const budgetRate = isMonthly
+                            ? getRateForMonth(budgetCurrency, currentMonth)
+                            : (budgetCurrency === 'TRY'
+                                ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+                                : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12);
+                        const planInOriginal = plan * budgetRate;
+                        const symbol = currencySymbols[budgetCurrency];
+                        planOriginalHtml = `<div class="original-currency">📌 ${symbol}${planInOriginal.toFixed(0)}</div>`;
                     }
 
                     let barClass = type === 'expense'
@@ -2408,6 +2449,7 @@
                                     <div class="stat-label">${planLabel}</div>
                                     <div class="stat-value plan">${formatCurrency(plan)}</div>
                                     <div class="stat-sub">${formatCurrency(plan * tryRate, 'TRY')} / ${formatCurrency(plan * rubRate, 'RUB')}</div>
+                                    ${planOriginalHtml}
                                 </div>
                                 <div class="stat-box">
                                     <div class="stat-label">Gerçekleşen</div>
@@ -2753,11 +2795,47 @@
             if (!cat) return;
 
             editingCategoryId = categoryId;
-            selectedEditCategoryCurrency = 'USD';
+
+            // Mevcut yıl için bütçe bilgilerini al
+            const yearBudget = cat.budgets && cat.budgets[currentYear];
+            let yearlyBudgetUSD = 0;
+            let monthlyBudgetsUSD = [];
+            let savedCurrency = 'USD';
+
+            if (yearBudget) {
+                yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
+                monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
+                savedCurrency = yearBudget.budgetCurrency || 'USD';
+            } else {
+                // Eski format desteği (geriye uyumluluk)
+                yearlyBudgetUSD = cat.yearlyBudget || 0;
+                monthlyBudgetsUSD = cat.monthlyBudgets || [];
+                savedCurrency = cat.budgetCurrency || 'USD';
+            }
+
+            selectedEditCategoryCurrency = savedCurrency;
             document.getElementById('editCategoryName').value = cat.name;
-            document.getElementById('editCategoryYearlyBudget').value = cat.yearlyBudget || 0;
+
+            // Eğer kayıtlı para birimi varsa, o para biriminde göster
+            if (savedCurrency !== 'USD') {
+                const avgRate = savedCurrency === 'TRY'
+                    ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
+                    : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+                document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
+
+                const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
+                    const rate = getRateForMonth(savedCurrency, i);
+                    return val * rate;
+                });
+                renderMonthlyBudgetGrid('editMonthlyBudgetGrid', convertedMonthly);
+            } else {
+                document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD;
+                renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
+            }
+
             updateEditCategoryCurrencyUI();
-            renderMonthlyBudgetGrid('editMonthlyBudgetGrid', cat.monthlyBudgets);
+            // Modal başlığına yılı ekle
+            document.querySelector('#editBudgetModal .modal-header h2').textContent = `${currentYear} Bütçesi Düzenle`;
             document.getElementById('editBudgetModal').classList.add('active');
         }
 
@@ -2769,18 +2847,32 @@
             selectedEditCategoryCurrency = currency;
             updateEditCategoryCurrencyUI();
 
+            // Yıl bazında bütçe bilgilerini al
+            const yearBudget = cat.budgets && cat.budgets[currentYear];
+            let yearlyBudgetUSD = 0;
+            let monthlyBudgetsUSD = [];
+
+            if (yearBudget) {
+                yearlyBudgetUSD = yearBudget.yearlyBudget || 0;
+                monthlyBudgetsUSD = yearBudget.monthlyBudgets || [];
+            } else {
+                // Eski format desteği
+                yearlyBudgetUSD = cat.yearlyBudget || 0;
+                monthlyBudgetsUSD = cat.monthlyBudgets || [];
+            }
+
             // Convert and display in selected currency
             if (currency === 'USD') {
-                document.getElementById('editCategoryYearlyBudget').value = (cat.yearlyBudget || 0).toFixed(2);
-                renderMonthlyBudgetGrid('editMonthlyBudgetGrid', cat.monthlyBudgets);
+                document.getElementById('editCategoryYearlyBudget').value = yearlyBudgetUSD.toFixed(2);
+                renderMonthlyBudgetGrid('editMonthlyBudgetGrid', monthlyBudgetsUSD);
             } else {
                 const avgRate = currency === 'TRY'
                     ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
                     : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-                document.getElementById('editCategoryYearlyBudget').value = ((cat.yearlyBudget || 0) * avgRate).toFixed(2);
+                document.getElementById('editCategoryYearlyBudget').value = (yearlyBudgetUSD * avgRate).toFixed(2);
 
-                const convertedMonthly = (cat.monthlyBudgets || []).map((val, i) => {
+                const convertedMonthly = monthlyBudgetsUSD.map((val, i) => {
                     const rate = getRateForMonth(currency, i);
                     return val * rate;
                 });
@@ -2841,8 +2933,13 @@
                 const cat = categories[type].find(c => c.id === editingCategoryId);
                 if (cat) {
                     cat.name = name;
-                    cat.yearlyBudget = yearlyBudget;
-                    cat.monthlyBudgets = monthlyBudgets;
+                    // Yıl bazında bütçe kaydet
+                    if (!cat.budgets) cat.budgets = {};
+                    cat.budgets[currentYear] = {
+                        yearlyBudget: yearlyBudget,
+                        monthlyBudgets: monthlyBudgets,
+                        budgetCurrency: selectedEditCategoryCurrency
+                    };
                 }
             });
 
