@@ -1780,9 +1780,10 @@
                 }
                 // Yeni formatta değerler 0 ise, eski formata BAK (geçiş dönemi desteği)
             }
-            // Eski format desteği (geriye uyumluluk)
-            if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
-                return cat.monthlyBudgets.reduce((a, b) => a + (b || 0), 0);
+            // Eski format desteği (geriye uyumluluk) - array uzunluğu ne olursa olsun topla
+            if (cat.monthlyBudgets && Array.isArray(cat.monthlyBudgets) && cat.monthlyBudgets.length > 0) {
+                const sum = cat.monthlyBudgets.reduce((a, b) => a + (b || 0), 0);
+                if (sum > 0) return sum;
             }
             if (cat.yearlyBudget) return cat.yearlyBudget;
             return 0;
@@ -1802,9 +1803,10 @@
                 }
                 // Yeni formatta değerler 0 ise, eski formata BAK (geçiş dönemi desteği)
             }
-            // Eski format desteği (geriye uyumluluk)
-            if (cat.monthlyBudgets && cat.monthlyBudgets.length === 12) {
-                return cat.monthlyBudgets[month] || 0;
+            // Eski format desteği (geriye uyumluluk) - array uzunluğu ne olursa olsun kullan
+            if (cat.monthlyBudgets && Array.isArray(cat.monthlyBudgets) && cat.monthlyBudgets.length > 0) {
+                const sum = cat.monthlyBudgets.reduce((a, b) => a + (b || 0), 0);
+                if (sum > 0) return cat.monthlyBudgets[month] || 0;
             }
             if (cat.yearlyBudget) return cat.yearlyBudget / 12;
             return 0;
@@ -3053,7 +3055,7 @@
         }
 
         function confirmClearAllData() {
-            document.getElementById('confirmMessage').textContent = 'Tüm kategoriler ve i��lemler silinecek. Bu işlem geri alınamaz!';
+            document.getElementById('confirmMessage').textContent = 'Tüm kategoriler ve işlemler silinecek. Bu işlem geri alınamaz!';
             deleteCallback = () => {
                 categories = { income: [], expense: [] };
                 transactions = [];
