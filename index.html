@@ -2405,6 +2405,10 @@
                             ? today.getDate()
                             : daysInMonth;
 
+                        // Orijinal para biriminde plan hesapla
+                        const planOriginal = plan * getRateForMonth(budgetCurrency, currentMonth);
+                        const dailyLimitOriginal = planOriginal / daysInMonth;
+
                         const dailyLimit = plan / daysInMonth;
                         const dailyLimitTRY = dailyLimit * tryRate;
                         const dailyLimitRUB = dailyLimit * rubRate;
@@ -2416,25 +2420,45 @@
                         const dailyAvgSpent = currentDay > 0 ? fact / currentDay : 0;
                         const dailyAvgSpentTRY = dailyAvgSpent * tryRate;
                         const dailyAvgSpentRUB = dailyAvgSpent * rubRate;
+                        const dailyAvgSpentOriginal = dailyAvgSpent * getRateForMonth(budgetCurrency, currentMonth);
 
                         // Durum: günlük ortalama, günlük limitin altında mı?
                         const dailyStatus = dailyAvgSpent <= dailyLimit ? 'positive' : 'negative';
                         const dailyDiff = dailyLimit - dailyAvgSpent;
-                        const dailyDiffRUB = dailyDiff * rubRate;
+                        const dailyDiffOriginal = dailyLimitOriginal - dailyAvgSpentOriginal;
+
+                        // Orijinal para birimine göre gösterim formatı
+                        let dailyLimitDisplay, dailyAvgDisplay, dailyDiffDisplay;
+                        const origSymbol = currencySymbols[budgetCurrency] || '$';
+
+                        if (budgetCurrency === 'TRY') {
+                            dailyLimitDisplay = `${origSymbol}${dailyLimitOriginal.toFixed(0)} <small>(${formatCurrency(dailyLimit)} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small>`;
+                            dailyAvgDisplay = `${origSymbol}${dailyAvgSpentOriginal.toFixed(0)} <small>(${formatCurrency(dailyAvgSpent)} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small>`;
+                            dailyDiffDisplay = `${dailyDiffOriginal >= 0 ? '+' : ''}${origSymbol}${dailyDiffOriginal.toFixed(0)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * rubRate, 'RUB')})</small>`;
+                        } else if (budgetCurrency === 'RUB') {
+                            dailyLimitDisplay = `${origSymbol}${dailyLimitOriginal.toFixed(0)} <small>(${formatCurrency(dailyLimit)} / ${formatCurrency(dailyLimitTRY, 'TRY')})</small>`;
+                            dailyAvgDisplay = `${origSymbol}${dailyAvgSpentOriginal.toFixed(0)} <small>(${formatCurrency(dailyAvgSpent)} / ${formatCurrency(dailyAvgSpentTRY, 'TRY')})</small>`;
+                            dailyDiffDisplay = `${dailyDiffOriginal >= 0 ? '+' : ''}${origSymbol}${dailyDiffOriginal.toFixed(0)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')})</small>`;
+                        } else {
+                            // USD - mevcut format
+                            dailyLimitDisplay = `${formatCurrency(dailyLimit)} <small>(${formatCurrency(dailyLimitTRY, 'TRY')} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small>`;
+                            dailyAvgDisplay = `${formatCurrency(dailyAvgSpent)} <small>(${formatCurrency(dailyAvgSpentTRY, 'TRY')} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small>`;
+                            dailyDiffDisplay = `${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * rubRate, 'RUB')})</small>`;
+                        }
 
                         dailySection = `
                             <div class="daily-budget-info">
                                 <div class="daily-item">
                                     <span class="daily-label">📅 Günlük Limit:</span>
-                                    <span class="daily-value">${formatCurrency(dailyLimit)} <small>(${formatCurrency(dailyLimitTRY, 'TRY')} / ${formatCurrency(dailyLimitRUB, 'RUB')})</small></span>
+                                    <span class="daily-value">${dailyLimitDisplay}</span>
                                 </div>
                                 <div class="daily-item">
                                     <span class="daily-label">📊 Günlük Ortalama:</span>
-                                    <span class="daily-value ${dailyStatus}">${formatCurrency(dailyAvgSpent)} <small>(${formatCurrency(dailyAvgSpentTRY, 'TRY')} / ${formatCurrency(dailyAvgSpentRUB, 'RUB')})</small></span>
+                                    <span class="daily-value ${dailyStatus}">${dailyAvgDisplay}</span>
                                 </div>
                                 <div class="daily-item">
                                     <span class="daily-label">📈 Günlük Fark:</span>
-                                    <span class="daily-value ${dailyStatus}">${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff)} <small>(${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiff * tryRate, 'TRY')} / ${dailyDiff >= 0 ? '+' : ''}${formatCurrency(dailyDiffRUB, 'RUB')})</small></span>
+                                    <span class="daily-value ${dailyStatus}">${dailyDiffDisplay}</span>
                                 </div>
                             </div>
                         `;
