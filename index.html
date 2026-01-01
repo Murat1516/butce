@@ -1868,8 +1868,9 @@
 
         function updateCurrencySummary(txList, tryRate, rubRate) {
             const container = document.getElementById('currencySummaryGrid');
+            const isMonthly = viewMode === 'monthly';
 
-            // Her para biriminde orijinal tutarları hesapla
+            // Her para biriminde orijinal tutarları hesapla (işlemler)
             const byCurrency = { USD: { income: 0, expense: 0 }, TRY: { income: 0, expense: 0 }, RUB: { income: 0, expense: 0 } };
 
             txList.forEach(t => {
@@ -1878,57 +1879,89 @@
                 }
             });
 
-            // USD karşılıkları hesapla
-            const usdIncome = byCurrency.USD.income + (byCurrency.TRY.income / tryRate) + (byCurrency.RUB.income / rubRate);
-            const usdExpense = byCurrency.USD.expense + (byCurrency.TRY.expense / tryRate) + (byCurrency.RUB.expense / rubRate);
+            // Bütçe planları (USD cinsinden, sonra çevrilecek)
+            const planIncomeUSD = isMonthly
+                ? categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0)
+                : categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+            const planExpenseUSD = isMonthly
+                ? categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, currentMonth), 0)
+                : categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+
+            // Toplam gerçekleşen (USD cinsinden)
+            const factIncomeUSD = txList.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amountUSD, 0);
+            const factExpenseUSD = txList.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
 
             container.innerHTML = `
                 <div class="currency-card usd">
                     <div class="currency-symbol">$</div>
                     <div class="currency-label">Dolar (USD)</div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan G:</span>
+                        <span>$${planIncomeUSD.toFixed(0)}</span>
+                    </div>
                     <div class="currency-row income">
-                        <span>Gelir:</span>
-                        <span>$${byCurrency.USD.income.toFixed(0)}</span>
+                        <span>Gerç. G:</span>
+                        <span>$${factIncomeUSD.toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan Gd:</span>
+                        <span>$${planExpenseUSD.toFixed(0)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>Gider:</span>
-                        <span>$${byCurrency.USD.expense.toFixed(0)}</span>
+                        <span>Gerç. Gd:</span>
+                        <span>$${factExpenseUSD.toFixed(0)}</span>
                     </div>
-                    <div class="currency-row net ${(byCurrency.USD.income - byCurrency.USD.expense) >= 0 ? 'positive' : 'negative'}">
+                    <div class="currency-row net ${(factIncomeUSD - factExpenseUSD) >= 0 ? 'positive' : 'negative'}">
                         <span>Net:</span>
-                        <span>${(byCurrency.USD.income - byCurrency.USD.expense) >= 0 ? '+' : ''}$${(byCurrency.USD.income - byCurrency.USD.expense).toFixed(0)}</span>
+                        <span>${(factIncomeUSD - factExpenseUSD) >= 0 ? '+' : ''}$${(factIncomeUSD - factExpenseUSD).toFixed(0)}</span>
                     </div>
                 </div>
                 <div class="currency-card try">
                     <div class="currency-symbol">₺</div>
                     <div class="currency-label">Türk Lirası (TRY)</div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan G:</span>
+                        <span>₺${(planIncomeUSD * tryRate).toFixed(0)}</span>
+                    </div>
                     <div class="currency-row income">
-                        <span>Gelir:</span>
-                        <span>₺${byCurrency.TRY.income.toFixed(0)}</span>
+                        <span>Gerç. G:</span>
+                        <span>₺${(factIncomeUSD * tryRate).toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan Gd:</span>
+                        <span>₺${(planExpenseUSD * tryRate).toFixed(0)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>Gider:</span>
-                        <span>₺${byCurrency.TRY.expense.toFixed(0)}</span>
+                        <span>Gerç. Gd:</span>
+                        <span>₺${(factExpenseUSD * tryRate).toFixed(0)}</span>
                     </div>
-                    <div class="currency-row net ${(byCurrency.TRY.income - byCurrency.TRY.expense) >= 0 ? 'positive' : 'negative'}">
+                    <div class="currency-row net ${(factIncomeUSD - factExpenseUSD) >= 0 ? 'positive' : 'negative'}">
                         <span>Net:</span>
-                        <span>${(byCurrency.TRY.income - byCurrency.TRY.expense) >= 0 ? '+' : ''}₺${(byCurrency.TRY.income - byCurrency.TRY.expense).toFixed(0)}</span>
+                        <span>${(factIncomeUSD - factExpenseUSD) >= 0 ? '+' : ''}₺${((factIncomeUSD - factExpenseUSD) * tryRate).toFixed(0)}</span>
                     </div>
                 </div>
                 <div class="currency-card rub">
                     <div class="currency-symbol">₽</div>
                     <div class="currency-label">Ruble (RUB)</div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan G:</span>
+                        <span>₽${(planIncomeUSD * rubRate).toFixed(0)}</span>
+                    </div>
                     <div class="currency-row income">
-                        <span>Gelir:</span>
-                        <span>₽${byCurrency.RUB.income.toFixed(0)}</span>
+                        <span>Gerç. G:</span>
+                        <span>₽${(factIncomeUSD * rubRate).toFixed(0)}</span>
+                    </div>
+                    <div class="currency-row" style="color: var(--text-secondary);">
+                        <span>Plan Gd:</span>
+                        <span>₽${(planExpenseUSD * rubRate).toFixed(0)}</span>
                     </div>
                     <div class="currency-row expense">
-                        <span>Gider:</span>
-                        <span>₽${byCurrency.RUB.expense.toFixed(0)}</span>
+                        <span>Gerç. Gd:</span>
+                        <span>₽${(factExpenseUSD * rubRate).toFixed(0)}</span>
                     </div>
-                    <div class="currency-row net ${(byCurrency.RUB.income - byCurrency.RUB.expense) >= 0 ? 'positive' : 'negative'}">
+                    <div class="currency-row net ${(factIncomeUSD - factExpenseUSD) >= 0 ? 'positive' : 'negative'}">
                         <span>Net:</span>
-                        <span>${(byCurrency.RUB.income - byCurrency.RUB.expense) >= 0 ? '+' : ''}₽${(byCurrency.RUB.income - byCurrency.RUB.expense).toFixed(0)}</span>
+                        <span>${(factIncomeUSD - factExpenseUSD) >= 0 ? '+' : ''}₽${((factIncomeUSD - factExpenseUSD) * rubRate).toFixed(0)}</span>
                     </div>
                 </div>
             `;
