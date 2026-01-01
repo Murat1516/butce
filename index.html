@@ -2372,12 +2372,19 @@
                     const budgetCurrency = getCategoryBudgetCurrency(cat, currentYear);
                     if (budgetCurrency && budgetCurrency !== 'USD' && plan > 0) {
                         // Bütçe orijinal para birimindeyse, o para biriminde göster
-                        const budgetRate = isMonthly
-                            ? getRateForMonth(budgetCurrency, currentMonth)
-                            : (budgetCurrency === 'TRY'
-                                ? monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12
-                                : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12);
-                        const planInOriginal = plan * budgetRate;
+                        // Her ayın planını o ayın kuruyla çevirip topla (tutarlılık için)
+                        let planInOriginal;
+                        if (isMonthly) {
+                            planInOriginal = plan * getRateForMonth(budgetCurrency, currentMonth);
+                        } else {
+                            // Yıllık için: her ayın planını o ayın kuruyla çevir ve topla
+                            planInOriginal = 0;
+                            for (let i = 0; i < 12; i++) {
+                                const monthPlan = getCategoryMonthlyPlan(cat, i);
+                                const monthRate = getRateForMonth(budgetCurrency, i);
+                                planInOriginal += monthPlan * monthRate;
+                            }
+                        }
                         const symbol = currencySymbols[budgetCurrency];
                         planOriginalHtml = `<div class="original-currency">📌 ${symbol}${planInOriginal.toFixed(0)}</div>`;
                     }
