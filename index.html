@@ -3799,12 +3799,69 @@
 
             const wb = XLSX.utils.book_new();
 
+            // Stil sabitleri
+            const borderStyle = { style: 'thin', color: { rgb: '000000' } };
+            const allBorders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
+            const headerFill = { fgColor: { rgb: '4A5568' }, patternType: 'solid' };
+            const headerFont = { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 };
+            const titleFont = { bold: true, sz: 14, color: { rgb: '2D3748' } };
+            const subtitleFont = { bold: false, sz: 10, color: { rgb: '718096' } };
+            const incomeFont = { color: { rgb: '059669' } };
+            const expenseFont = { color: { rgb: 'DC2626' } };
+            const incomeFill = { fgColor: { rgb: 'D1FAE5' }, patternType: 'solid' };
+            const expenseFill = { fgColor: { rgb: 'FEE2E2' }, patternType: 'solid' };
+            const altRowFill = { fgColor: { rgb: 'F7FAFC' }, patternType: 'solid' };
+
+            // Yardımcı fonksiyonlar
+            function applyStyleToSheet(ws, range, dataRows, headerRowIndex, options = {}) {
+                const { hasTotal = false, totalRowIndex = -1, colorColumn = -1 } = options;
+
+                // Tüm hücrelere kenarlık ekle
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
+                        if (!ws[cellRef].s) ws[cellRef].s = {};
+                        ws[cellRef].s.border = allBorders;
+
+                        // Header satırı
+                        if (R === headerRowIndex) {
+                            ws[cellRef].s.fill = headerFill;
+                            ws[cellRef].s.font = headerFont;
+                            ws[cellRef].s.alignment = { horizontal: 'center', vertical: 'center' };
+                        }
+                        // Toplam satırı
+                        else if (hasTotal && R === totalRowIndex) {
+                            ws[cellRef].s.font = { bold: true, sz: 11 };
+                            ws[cellRef].s.fill = { fgColor: { rgb: 'E2E8F0' }, patternType: 'solid' };
+                        }
+                        // Normal satırlar - alternatif renk
+                        else if (R > headerRowIndex && (R - headerRowIndex) % 2 === 0) {
+                            ws[cellRef].s.fill = altRowFill;
+                        }
+
+                        // Sayı hücreleri sağa hizala
+                        if (C > 0 && R > headerRowIndex) {
+                            ws[cellRef].s.alignment = { horizontal: 'right' };
+                        }
+                    }
+                }
+            }
+
+            function setColumnWidths(ws, widths) {
+                ws['!cols'] = widths.map(w => ({ wch: w }));
+            }
+
+            function formatNumber(num) {
+                return Number(num).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
             // ===== ÖZET SAYFASI =====
             const summaryData = [];
-            summaryData.push(['BÜTÇE RAPORU']);
-            summaryData.push([isMonthly ? `${monthNamesFull[currentMonth]} ${currentYear}` : `${currentYear} Yılı`]);
-            summaryData.push([`Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}`]);
-            summaryData.push([]);
+            summaryData.push(['BÜTÇE RAPORU', '', '', '', '', '', '']);
+            summaryData.push([isMonthly ? `${monthNamesFull[currentMonth]} ${currentYear}` : `${currentYear} Yılı`, '', '', '', '', '', '']);
+            summaryData.push([`Oluşturulma: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}`, '', '', '', '', '', '']);
+            summaryData.push(['', '', '', '', '', '', '']);
 
             // Hesaplamalar
             let planIncome, planExpense, factIncome, factExpense;
@@ -3821,21 +3878,75 @@
                 factExpense = yearTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amountUSD, 0);
             }
             const net = factIncome - factExpense;
+            const incomeDiff = factIncome - planIncome;
+            const expenseDiff = planExpense - factExpense;
 
             summaryData.push(['ÖZET', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)']);
-            summaryData.push(['Gelir', planIncome.toFixed(2), (planIncome * tryRate).toFixed(2), factIncome.toFixed(2), (factIncome * tryRate).toFixed(2), (factIncome - planIncome).toFixed(2), ((factIncome - planIncome) * tryRate).toFixed(2)]);
-            summaryData.push(['Gider', planExpense.toFixed(2), (planExpense * tryRate).toFixed(2), factExpense.toFixed(2), (factExpense * tryRate).toFixed(2), (planExpense - factExpense).toFixed(2), ((planExpense - factExpense) * tryRate).toFixed(2)]);
-            summaryData.push(['Net', '', '', net.toFixed(2), (net * tryRate).toFixed(2), '', '']);
+            summaryData.push(['💰 Gelir', formatNumber(planIncome), formatNumber(planIncome * tryRate), formatNumber(factIncome), formatNumber(factIncome * tryRate), formatNumber(incomeDiff), formatNumber(incomeDiff * tryRate)]);
+            summaryData.push(['💸 Gider', formatNumber(planExpense), formatNumber(planExpense * tryRate), formatNumber(factExpense), formatNumber(factExpense * tryRate), formatNumber(expenseDiff), formatNumber(expenseDiff * tryRate)]);
+            summaryData.push(['📊 Net', '', '', formatNumber(net), formatNumber(net * tryRate), '', '']);
+            summaryData.push(['', '', '', '', '', '', '']);
+
+            // Para birimi bazında özet
+            summaryData.push(['PARA BİRİMİ BAZINDA HARCAMALAR', '', '', '', '', '', '']);
+            summaryData.push(['Para Birimi', 'Plan', 'Gerçekleşen', 'Fark', '', '', '']);
+
+            // Para birimi hesaplamaları
+            let planUSD = 0, planTRY = 0, planRUB = 0;
+            let actualUSD = 0, actualTRY = 0, actualRUB = 0;
+
+            categories.expense.forEach(cat => {
+                const catPlan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const budgetCurrency = getCategoryBudgetCurrency(cat);
+                const monthTryRate = isMonthly ? getRateForMonth('TRY', currentMonth) : tryRate;
+                const monthRubRate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+
+                if (budgetCurrency === 'USD') planUSD += catPlan;
+                else if (budgetCurrency === 'TRY') planTRY += catPlan * monthTryRate;
+                else if (budgetCurrency === 'RUB') planRUB += catPlan * monthRubRate;
+            });
+
+            const txListForCurrency = isMonthly ? yearTx.filter(t => new Date(t.date).getMonth() === currentMonth && t.type === 'expense') : yearTx.filter(t => t.type === 'expense');
+            actualUSD = txListForCurrency.filter(t => t.currency === 'USD').reduce((sum, t) => sum + t.amount, 0);
+            actualTRY = txListForCurrency.filter(t => t.currency === 'TRY').reduce((sum, t) => sum + t.amount, 0);
+            actualRUB = txListForCurrency.filter(t => t.currency === 'RUB').reduce((sum, t) => sum + t.amount, 0);
+
+            summaryData.push(['$ Dolar (USD)', formatNumber(planUSD), formatNumber(actualUSD), formatNumber(planUSD - actualUSD), '', '', '']);
+            summaryData.push(['₺ Türk Lirası (TRY)', formatNumber(planTRY), formatNumber(actualTRY), formatNumber(planTRY - actualTRY), '', '', '']);
+            summaryData.push(['₽ Ruble (RUB)', formatNumber(planRUB), formatNumber(actualRUB), formatNumber(planRUB - actualRUB), '', '', '']);
 
             const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+
+            // Özet sayfa stilleri
+            setColumnWidths(wsSummary, [22, 16, 16, 16, 16, 14, 14]);
+            wsSummary['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+                { s: { r: 9, c: 0 }, e: { r: 9, c: 6 } }
+            ];
+
+            // Başlık stilleri
+            if (wsSummary['A1']) wsSummary['A1'].s = { font: titleFont, alignment: { horizontal: 'center' } };
+            if (wsSummary['A2']) wsSummary['A2'].s = { font: subtitleFont, alignment: { horizontal: 'center' } };
+            if (wsSummary['A3']) wsSummary['A3'].s = { font: subtitleFont, alignment: { horizontal: 'center' } };
+
+            // Tablo başlıkları ve kenarlıklar
+            const summaryRange = { s: { r: 4, c: 0 }, e: { r: 8, c: 6 } };
+            applyStyleToSheet(wsSummary, summaryRange, summaryData.slice(4), 4, { hasTotal: true, totalRowIndex: 8 });
+
+            const currencyRange = { s: { r: 10, c: 0 }, e: { r: 14, c: 3 } };
+            applyStyleToSheet(wsSummary, currencyRange, summaryData.slice(10), 10);
+
             XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
 
             // ===== GELİR KALEMLERİ SAYFASI =====
             const incomeData = [];
-            incomeData.push(['GELİR KALEMLERİ']);
-            incomeData.push([]);
-            incomeData.push(['Kategori', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+            incomeData.push(['💰 GELİR KALEMLERİ', '', '', '', '', '', '', '']);
+            incomeData.push(['', '', '', '', '', '', '', '']);
+            incomeData.push(['Kategori', 'Para Birimi', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'İşlem']);
 
+            let totalIncomePlan = 0, totalIncomeFact = 0;
             categories.income.forEach(cat => {
                 const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
                 const txList = isMonthly
@@ -3843,30 +3954,54 @@
                     : yearTx.filter(t => t.categoryId === cat.id);
                 const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
                 const diff = fact - plan;
+                const budgetCurrency = getCategoryBudgetCurrency(cat);
+
+                totalIncomePlan += plan;
+                totalIncomeFact += fact;
 
                 incomeData.push([
                     cat.name,
-                    plan.toFixed(2),
-                    (plan * tryRate).toFixed(2),
-                    fact.toFixed(2),
-                    (fact * tryRate).toFixed(2),
-                    diff.toFixed(2),
-                    (diff * tryRate).toFixed(2),
+                    budgetCurrency,
+                    formatNumber(plan),
+                    formatNumber(plan * tryRate),
+                    formatNumber(fact),
+                    formatNumber(fact * tryRate),
+                    formatNumber(diff),
                     txList.length
                 ]);
             });
 
+            incomeData.push([
+                '📊 TOPLAM',
+                '',
+                formatNumber(totalIncomePlan),
+                formatNumber(totalIncomePlan * tryRate),
+                formatNumber(totalIncomeFact),
+                formatNumber(totalIncomeFact * tryRate),
+                formatNumber(totalIncomeFact - totalIncomePlan),
+                ''
+            ]);
+
             const wsIncome = XLSX.utils.aoa_to_sheet(incomeData);
+            setColumnWidths(wsIncome, [24, 12, 14, 16, 14, 16, 14, 8]);
+            wsIncome['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+            if (wsIncome['A1']) wsIncome['A1'].s = { font: titleFont };
+
+            const incomeRange = { s: { r: 2, c: 0 }, e: { r: incomeData.length - 1, c: 7 } };
+            applyStyleToSheet(wsIncome, incomeRange, incomeData.slice(2), 2, { hasTotal: true, totalRowIndex: incomeData.length - 1 });
+
             XLSX.utils.book_append_sheet(wb, wsIncome, 'Gelir Kalemleri');
 
             // ===== GİDER KALEMLERİ SAYFASI =====
             const expenseData = [];
-            expenseData.push(['GİDER KALEMLERİ']);
-            expenseData.push([]);
+            expenseData.push(['💸 GİDER KALEMLERİ', '', '', '', '', '', '', '', '', '']);
+            expenseData.push(['', '', '', '', '', '', '', '', '', '']);
+
+            let totalExpensePlan = 0, totalExpenseFact = 0;
 
             if (isMonthly) {
                 const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                expenseData.push(['Kategori', 'Aylık Plan ($)', 'Aylık Plan (₺)', 'Günlük Limit ($)', 'Günlük Limit (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+                expenseData.push(['Kategori', 'P.B.', 'Aylık Plan ($)', 'Aylık Plan (₺)', 'Günlük ($)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Oran %', 'İşlem']);
 
                 categories.expense.forEach(cat => {
                     const plan = getCategoryMonthlyPlan(cat, currentMonth);
@@ -3874,49 +4009,94 @@
                     const txList = yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth);
                     const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
                     const diff = plan - fact;
+                    const percent = plan > 0 ? (fact / plan * 100) : 0;
+                    const budgetCurrency = getCategoryBudgetCurrency(cat);
+
+                    totalExpensePlan += plan;
+                    totalExpenseFact += fact;
 
                     expenseData.push([
                         cat.name,
-                        plan.toFixed(2),
-                        (plan * tryRate).toFixed(2),
-                        dailyLimit.toFixed(2),
-                        (dailyLimit * tryRate).toFixed(2),
-                        fact.toFixed(2),
-                        (fact * tryRate).toFixed(2),
-                        diff.toFixed(2),
-                        (diff * tryRate).toFixed(2),
+                        budgetCurrency,
+                        formatNumber(plan),
+                        formatNumber(plan * tryRate),
+                        formatNumber(dailyLimit),
+                        formatNumber(fact),
+                        formatNumber(fact * tryRate),
+                        formatNumber(diff),
+                        `%${percent.toFixed(0)}`,
                         txList.length
                     ]);
                 });
+
+                expenseData.push([
+                    '📊 TOPLAM',
+                    '',
+                    formatNumber(totalExpensePlan),
+                    formatNumber(totalExpensePlan * tryRate),
+                    formatNumber(totalExpensePlan / daysInMonth),
+                    formatNumber(totalExpenseFact),
+                    formatNumber(totalExpenseFact * tryRate),
+                    formatNumber(totalExpensePlan - totalExpenseFact),
+                    totalExpensePlan > 0 ? `%${(totalExpenseFact / totalExpensePlan * 100).toFixed(0)}` : '%0',
+                    ''
+                ]);
             } else {
-                expenseData.push(['Kategori', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+                expenseData.push(['Kategori', 'P.B.', 'Plan ($)', 'Plan (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'Oran %', 'İşlem']);
 
                 categories.expense.forEach(cat => {
                     const plan = getCategoryYearlyPlan(cat);
                     const txList = yearTx.filter(t => t.categoryId === cat.id);
                     const fact = txList.reduce((sum, t) => sum + t.amountUSD, 0);
                     const diff = plan - fact;
+                    const percent = plan > 0 ? (fact / plan * 100) : 0;
+                    const budgetCurrency = getCategoryBudgetCurrency(cat);
+
+                    totalExpensePlan += plan;
+                    totalExpenseFact += fact;
 
                     expenseData.push([
                         cat.name,
-                        plan.toFixed(2),
-                        (plan * tryRate).toFixed(2),
-                        fact.toFixed(2),
-                        (fact * tryRate).toFixed(2),
-                        diff.toFixed(2),
-                        (diff * tryRate).toFixed(2),
+                        budgetCurrency,
+                        formatNumber(plan),
+                        formatNumber(plan * tryRate),
+                        formatNumber(fact),
+                        formatNumber(fact * tryRate),
+                        formatNumber(diff),
+                        formatNumber(diff * tryRate),
+                        `%${percent.toFixed(0)}`,
                         txList.length
                     ]);
                 });
+
+                expenseData.push([
+                    '📊 TOPLAM',
+                    '',
+                    formatNumber(totalExpensePlan),
+                    formatNumber(totalExpensePlan * tryRate),
+                    formatNumber(totalExpenseFact),
+                    formatNumber(totalExpenseFact * tryRate),
+                    formatNumber(totalExpensePlan - totalExpenseFact),
+                    formatNumber((totalExpensePlan - totalExpenseFact) * tryRate),
+                    totalExpensePlan > 0 ? `%${(totalExpenseFact / totalExpensePlan * 100).toFixed(0)}` : '%0',
+                    ''
+                ]);
             }
 
             const wsExpense = XLSX.utils.aoa_to_sheet(expenseData);
+            setColumnWidths(wsExpense, [24, 8, 14, 16, 12, 14, 16, 12, 10, 8]);
+            wsExpense['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }];
+            if (wsExpense['A1']) wsExpense['A1'].s = { font: titleFont };
+
+            const expenseRange = { s: { r: 2, c: 0 }, e: { r: expenseData.length - 1, c: 9 } };
+            applyStyleToSheet(wsExpense, expenseRange, expenseData.slice(2), 2, { hasTotal: true, totalRowIndex: expenseData.length - 1 });
+
             XLSX.utils.book_append_sheet(wb, wsExpense, 'Gider Kalemleri');
 
             // ===== İŞLEMLER SAYFASI =====
             const txData = [];
-            txData.push(['İŞLEMLER']);
-            txData.push([]);
+            txData.push(['📋 İŞLEMLER', '', '', '', '', '', '', '', '']);
+            txData.push(['', '', '', '', '', '', '', '', '']);
             txData.push(['Tarih', 'Tür', 'Kategori', 'Tutar ($)', 'Tutar (₺)', 'Orijinal Tutar', 'Para Birimi', 'Kur', 'Not']);
 
             const txList = isMonthly
@@ -3930,49 +4110,97 @@
 
                 txData.push([
                     new Date(tx.date).toLocaleDateString('tr-TR'),
-                    tx.type === 'income' ? 'Gelir' : 'Gider',
+                    tx.type === 'income' ? '✅ Gelir' : '❌ Gider',
                     catName,
-                    tx.amountUSD.toFixed(2),
-                    (tx.amountUSD * txTryRate).toFixed(2),
-                    tx.amount.toFixed(2),
+                    formatNumber(tx.amountUSD),
+                    formatNumber(tx.amountUSD * txTryRate),
+                    formatNumber(tx.amount),
                     tx.currency,
-                    tx.rateAtTime?.toFixed(2) || '-',
+                    tx.rateAtTime?.toFixed(4) || '-',
                     tx.note || ''
                 ]);
             });
 
             const wsTx = XLSX.utils.aoa_to_sheet(txData);
+            setColumnWidths(wsTx, [12, 12, 22, 14, 16, 14, 12, 10, 30]);
+            wsTx['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+            if (wsTx['A1']) wsTx['A1'].s = { font: titleFont };
+
+            const txRange = { s: { r: 2, c: 0 }, e: { r: txData.length - 1, c: 8 } };
+            applyStyleToSheet(wsTx, txRange, txData.slice(2), 2);
+
             XLSX.utils.book_append_sheet(wb, wsTx, 'İşlemler');
 
             // ===== AYLIK BÜTÇELER SAYFASI =====
             const monthlyBudgetData = [];
-            monthlyBudgetData.push(['AYLIK BÜTÇELER (USD)']);
-            monthlyBudgetData.push([]);
-            monthlyBudgetData.push(['Kategori', 'Tür', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara', 'Yıllık Toplam']);
+            monthlyBudgetData.push(['📅 AYLIK BÜTÇELER (USD)', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            monthlyBudgetData.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+            monthlyBudgetData.push(['Kategori', 'Tür', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara', 'Yıllık']);
 
-            [...categories.income, ...categories.expense].forEach(cat => {
-                const type = categories.income.includes(cat) ? 'Gelir' : 'Gider';
-                const row = [cat.name, type];
+            // Gelirler
+            categories.income.forEach(cat => {
+                const row = [cat.name, '💰 Gelir'];
                 for (let i = 0; i < 12; i++) {
-                    row.push(getCategoryMonthlyPlan(cat, i).toFixed(2));
+                    row.push(formatNumber(getCategoryMonthlyPlan(cat, i)));
                 }
-                row.push(getCategoryYearlyPlan(cat).toFixed(2));
+                row.push(formatNumber(getCategoryYearlyPlan(cat)));
                 monthlyBudgetData.push(row);
             });
 
+            // Giderler
+            categories.expense.forEach(cat => {
+                const row = [cat.name, '💸 Gider'];
+                for (let i = 0; i < 12; i++) {
+                    row.push(formatNumber(getCategoryMonthlyPlan(cat, i)));
+                }
+                row.push(formatNumber(getCategoryYearlyPlan(cat)));
+                monthlyBudgetData.push(row);
+            });
+
+            // Toplamlar satırı
+            const totalRow = ['📊 TOPLAM', ''];
+            for (let i = 0; i < 12; i++) {
+                const monthIncome = categories.income.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+                const monthExpense = categories.expense.reduce((sum, c) => sum + getCategoryMonthlyPlan(c, i), 0);
+                totalRow.push(formatNumber(monthIncome - monthExpense));
+            }
+            const yearlyIncome = categories.income.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+            const yearlyExpense = categories.expense.reduce((sum, c) => sum + getCategoryYearlyPlan(c), 0);
+            totalRow.push(formatNumber(yearlyIncome - yearlyExpense));
+            monthlyBudgetData.push(totalRow);
+
             const wsMonthlyBudget = XLSX.utils.aoa_to_sheet(monthlyBudgetData);
+            setColumnWidths(wsMonthlyBudget, [22, 12, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 12]);
+            wsMonthlyBudget['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 14 } }];
+            if (wsMonthlyBudget['A1']) wsMonthlyBudget['A1'].s = { font: titleFont };
+
+            const budgetRange = { s: { r: 2, c: 0 }, e: { r: monthlyBudgetData.length - 1, c: 14 } };
+            applyStyleToSheet(wsMonthlyBudget, budgetRange, monthlyBudgetData.slice(2), 2, { hasTotal: true, totalRowIndex: monthlyBudgetData.length - 1 });
+
             XLSX.utils.book_append_sheet(wb, wsMonthlyBudget, 'Aylık Bütçeler');
 
             // ===== KURLAR SAYFASI =====
             const ratesData = [];
-            ratesData.push(['DÖVİZ KURLARI (1 USD = ?)']);
-            ratesData.push([]);
-            ratesData.push(['Ay', 'TRY', 'RUB']);
+            ratesData.push(['💱 DÖVİZ KURLARI (1 USD = ?)', '', '']);
+            ratesData.push(['', '', '']);
+            ratesData.push(['Ay', 'TRY (₺)', 'RUB (₽)']);
             for (let i = 0; i < 12; i++) {
-                ratesData.push([monthNamesFull[i], monthlyRates.TRY[i].toFixed(2), monthlyRates.RUB[i].toFixed(2)]);
+                ratesData.push([monthNamesFull[i], formatNumber(monthlyRates.TRY[i]), formatNumber(monthlyRates.RUB[i])]);
             }
 
+            // Ortalama satırı
+            const avgTRY = monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+            const avgRUB = monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+            ratesData.push(['📊 Ortalama', formatNumber(avgTRY), formatNumber(avgRUB)]);
+
             const wsRates = XLSX.utils.aoa_to_sheet(ratesData);
+            setColumnWidths(wsRates, [16, 14, 14]);
+            wsRates['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }];
+            if (wsRates['A1']) wsRates['A1'].s = { font: titleFont };
+
+            const ratesRange = { s: { r: 2, c: 0 }, e: { r: ratesData.length - 1, c: 2 } };
+            applyStyleToSheet(wsRates, ratesRange, ratesData.slice(2), 2, { hasTotal: true, totalRowIndex: ratesData.length - 1 });
+
             XLSX.utils.book_append_sheet(wb, wsRates, 'Kurlar');
 
             // Dosyayı kaydet
@@ -3981,7 +4209,7 @@
                 : `butce-${currentYear}-yillik.xlsx`;
 
             XLSX.writeFile(wb, filename);
-            showToast('Excel oluşturuldu ✓');
+            showToast('Excel raporu oluşturuldu ✓');
         }
 
         function saveRates() {
