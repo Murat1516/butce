@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Portföy Takip</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
     <style>
         :root {
             --bg-primary: #0a0f1c;
@@ -706,8 +708,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
     </style>
-</head>
-<body>
+</head><body>
     <div class="container">
         <header class="header">
             <div class="logo">
@@ -798,6 +799,9 @@
                 <button class="filter-tab" data-filter="cash">💵 Kasa</button>
                 <button class="filter-tab" data-filter="deposit">🏦 Faiz</button>
                 <button class="filter-tab" data-filter="gold">🥇 Altın</button>
+                <button class="filter-tab" data-filter="silver">🥈 Gümüş</button>
+                <button class="filter-tab" data-filter="platinum">⚪ Platin</button>
+                <button class="filter-tab" data-filter="copper">🟤 Bakır</button>
                 <button class="filter-tab" data-filter="crypto">₿ Kripto</button>
             </div>
             <div class="holdings-list" id="holdingsList"></div>
@@ -822,240 +826,13 @@
                 <button class="tab" data-type="cash">💵 Kasa</button>
                 <button class="tab" data-type="deposit">🏦 Faiz</button>
                 <button class="tab" data-type="gold">🥇 Altın</button>
+                <button class="tab" data-type="silver">🥈 Gümüş</button>
+                <button class="tab" data-type="platinum">⚪ Platin</button>
+                <button class="tab" data-type="copper">🟤 Bakır</button>
                 <button class="tab" data-type="crypto">₿ Kripto</button>
             </div>
 
-            <form id="addForm">
-                <input type="hidden" id="editId" value="">
-
-                <!-- Stock Fields -->
-                <div id="stockFields">
-                    <div class="form-group">
-                        <label class="form-label">Sembol Ara</label>
-                        <div class="autocomplete-wrapper">
-                            <input type="text" class="form-input" id="symbolSearch" placeholder="AAPL, MSFT, THYAO..." autocomplete="off">
-                            <div class="autocomplete-list" id="autocompleteList"></div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Seçilen Hisse</label>
-                        <input type="text" class="form-input" id="selectedStock" readonly placeholder="Yukarıdan seçin...">
-                        <input type="hidden" id="symbol" value="">
-                        <input type="hidden" id="name" value="">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Adet</label>
-                            <input type="number" class="form-input" id="quantity" placeholder="0" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alış Fiyatı</label>
-                            <input type="number" class="form-input" id="buyPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Güncel Fiyat <span id="priceUnit">(USD)</span></label>
-                        <input type="number" class="form-input" id="currentPrice" placeholder="0.00" step="any">
-                    </div>
-                </div>
-
-                <!-- Cash Fields -->
-                <div id="cashFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Para Birimi</label>
-                        <div class="currency-select" id="currencySelect">
-                            <button type="button" class="currency-btn" data-currency="USD">$ USD</button>
-                            <button type="button" class="currency-btn active" data-currency="TRY">₺ TRY</button>
-                            <button type="button" class="currency-btn" data-currency="EUR">€ EUR</button>
-                            <button type="button" class="currency-btn" data-currency="GBP">£ GBP</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Miktar</label>
-                        <input type="number" class="form-input" id="cashAmount" placeholder="0.00" step="any">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Açıklama (Opsiyonel)</label>
-                        <input type="text" class="form-input" id="cashNote" placeholder="Cüzdan, kasa...">
-                    </div>
-                </div>
-
-                <!-- Deposit Fields (Faiz Hesabı) -->
-                <div id="depositFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Para Birimi</label>
-                        <div class="currency-select" id="depositCurrencySelect">
-                            <button type="button" class="currency-btn active" data-currency="TRY">₺ TRY</button>
-                            <button type="button" class="currency-btn" data-currency="USD">$ USD</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Anapara</label>
-                        <input type="number" class="form-input" id="depositAmount" placeholder="0.00" step="any">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Yıllık Faiz (%)</label>
-                            <input type="number" class="form-input" id="interestRate" placeholder="45" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Başlangıç Tarihi</label>
-                            <input type="date" class="form-input" id="depositStartDate">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Hesap Adı (Opsiyonel)</label>
-                        <input type="text" class="form-input" id="depositNote" placeholder="Banka adı, vadeli hesap...">
-                    </div>
-                </div>
-
-                <!-- Gold Fields -->
-                <div id="goldFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Altın Türü</label>
-                        <select class="form-select" id="goldType">
-                            <option value="gram">Gram Altın</option>
-                            <option value="ceyrek">Çeyrek Altın</option>
-                            <option value="yarim">Yarım Altın</option>
-                            <option value="tam">Tam Altın</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Adet/Gram</label>
-                            <input type="number" class="form-input" id="goldQuantity" placeholder="0" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alış Fiyatı (₺)</label>
-                            <input type="number" class="form-input" id="goldBuyPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Güncel Fiyat (₺)</label>
-                        <input type="number" class="form-input" id="goldCurrentPrice" placeholder="0.00" step="any">
-                    </div>
-                </div>
-
-                <!-- Crypto Fields -->
-                <div id="cryptoFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Sembol</label>
-                        <input type="text" class="form-input" id="cryptoSymbol" placeholder="BTC, ETH, SOL...">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Miktar</label>
-                            <input type="number" class="form-input" id="cryptoQuantity" placeholder="0.00" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alış Fiyatı ($)</label>
-                            <input type="number" class="form-input" id="cryptoBuyPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Güncel Fiyat ($)</label>
-                        <input type="number" class="form-input" id="cryptoCurrentPrice" placeholder="0.00" step="any">
-                    </div>
-                </div>
-
-                <!-- ETF Fields (US) -->
-                <div id="etfFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">ETF Sembolü Ara</label>
-                        <div class="autocomplete-wrapper">
-                            <input type="text" class="form-input" id="etfSearch" placeholder="SPY, QQQ, VOO..." autocomplete="off">
-                            <div class="autocomplete-list" id="etfAutocompleteList"></div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Seçilen ETF</label>
-                        <input type="text" class="form-input" id="selectedEtf" readonly placeholder="Yukarıdan seçin...">
-                        <input type="hidden" id="etfSymbol" value="">
-                        <input type="hidden" id="etfName" value="">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Adet</label>
-                            <input type="number" class="form-input" id="etfQuantity" placeholder="0" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alış Fiyatı ($)</label>
-                            <input type="number" class="form-input" id="etfBuyPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Güncel Fiyat ($)</label>
-                        <input type="number" class="form-input" id="etfCurrentPrice" placeholder="0.00" step="any">
-                    </div>
-                </div>
-
-                <!-- Fund Fields (TR) -->
-                <div id="fundFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Fon Kodu</label>
-                        <input type="text" class="form-input" id="fundCode" placeholder="TI2, YAY, IPB...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Fon Adı</label>
-                        <input type="text" class="form-input" id="fundName" placeholder="Fon adını girin...">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Pay Adedi</label>
-                            <input type="number" class="form-input" id="fundQuantity" placeholder="0" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Alış Fiyatı (₺)</label>
-                            <input type="number" class="form-input" id="fundBuyPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Güncel Fiyat (₺)</label>
-                        <input type="number" class="form-input" id="fundCurrentPrice" placeholder="0.00" step="any">
-                    </div>
-                </div>
-
-                <!-- VIOP Fields -->
-                <div id="viopFields" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Kontrat Adı</label>
-                        <input type="text" class="form-input" id="viopContract" placeholder="F_XU030, F_USDTRY...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Pozisyon</label>
-                        <div class="currency-select" id="viopPositionSelect">
-                            <button type="button" class="currency-btn active" data-position="long">📈 Long</button>
-                            <button type="button" class="currency-btn" data-position="short">📉 Short</button>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Kontrat Sayısı</label>
-                            <input type="number" class="form-input" id="viopQuantity" placeholder="1" step="1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Giriş Fiyatı (₺)</label>
-                            <input type="number" class="form-input" id="viopEntryPrice" placeholder="0.00" step="any">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Güncel Fiyat (₺)</label>
-                            <input type="number" class="form-input" id="viopCurrentPrice" placeholder="0.00" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Çarpan</label>
-                            <input type="number" class="form-input" id="viopMultiplier" placeholder="100" value="100" step="any">
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary" id="submitBtn">Ekle</button>
-                <button type="button" class="btn-secondary" id="deleteBtn" style="display: none;">
-                    <i class="fas fa-trash"></i> Sil
-                </button>
-                <button type="button" class="btn-secondary" id="cancelBtn">İptal</button>
-            </form>
+            <!-- Form alanları PARÇA 3'te JS ile birlikte gelecek -->
         </div>
     </div>
 
@@ -1063,1250 +840,277 @@
     <div class="modal-overlay" id="confirmModal">
         <div class="confirm-modal">
             <div class="confirm-title">Silmek istediğinize emin misiniz?</div>
-            <div class="confirm-message" id="confirmMessage">Bu varlık kalıcı olarak silinecek.</div>
+            <div class="confirm-message" id="confirmMessage">
+                Bu varlık kalıcı olarak silinecek.
+            </div>
             <div class="confirm-buttons">
                 <button class="confirm-cancel" id="confirmCancel">İptal</button>
                 <button class="confirm-ok" id="confirmOk">Sil</button>
             </div>
         </div>
-    </div>
-
-    <script>
-        // State
-        let holdings = [];
-        let priceHistory = []; // { date, totalValue }
-        let currentType = 'stock-us';
-        let currentFilter = 'all';
-        let editingId = null;
-        let deleteCallback = null;
-        let searchTimeout = null;
-        let isUpdating = false;
-        let lastUpdateTime = null;
-
-        // Exchange rates (USD base)
-        const exchangeRates = {
-            USD: 1,
-            TRY: 0.026,  // 1 TRY = 0.026 USD (1 USD = ~38 TRY)
-            EUR: 1.08,
-            GBP: 1.26
-        };
-
-        // TRY per USD for display
-        let usdTryRate = 38.5;
-
-        // DOM Elements
-        const addBtn = document.getElementById('addBtn');
-        const addModal = document.getElementById('addModal');
-        const addForm = document.getElementById('addForm');
-        const typeTabs = document.getElementById('typeTabs');
-        const filterTabs = document.getElementById('filterTabs');
-        const holdingsList = document.getElementById('holdingsList');
-        const themeToggle = document.getElementById('themeToggle');
-        const confirmModal = document.getElementById('confirmModal');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const symbolSearch = document.getElementById('symbolSearch');
-        const autocompleteList = document.getElementById('autocompleteList');
-
-        // Initialize
-        function init() {
-            loadData();
-            setupEventListeners();
-            setupTheme();
-            render();
-        }
-
-        // Theme
-        function setupTheme() {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-                document.documentElement.classList.add('light');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            }
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                if (event.matches) {
-                    document.documentElement.classList.remove('light');
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                } else {
-                    document.documentElement.classList.add('light');
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                }
-            });
-        }
-
-        // Event Listeners
-        function setupEventListeners() {
-            addBtn.addEventListener('click', () => openModal());
-            document.getElementById('cancelBtn').addEventListener('click', closeModal);
-            addModal.addEventListener('click', (e) => {
-                if (e.target === addModal) closeModal();
-            });
-
-            typeTabs.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => switchType(tab.dataset.type));
-            });
-
-            filterTabs.querySelectorAll('.filter-tab').forEach(tab => {
-                tab.addEventListener('click', () => switchFilter(tab.dataset.filter));
-            });
-
-            // Cash currency buttons
-            document.querySelectorAll('#currencySelect .currency-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#currencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                });
-            });
-
-            // Deposit currency buttons
-            document.querySelectorAll('#depositCurrencySelect .currency-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#depositCurrencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                });
-            });
-
-            addForm.addEventListener('submit', handleSubmit);
-
-            document.getElementById('deleteBtn').addEventListener('click', () => {
-                showConfirm('Bu varlığı silmek istediğinize emin misiniz?', () => {
-                    deleteHolding(editingId);
-                    closeModal();
-                });
-            });
-
-            themeToggle.addEventListener('click', () => {
-                document.documentElement.classList.toggle('light');
-                const isLight = document.documentElement.classList.contains('light');
-                themeToggle.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-            });
-
-            document.getElementById('confirmCancel').addEventListener('click', () => {
-                confirmModal.classList.remove('active');
-            });
-
-            document.getElementById('confirmOk').addEventListener('click', () => {
-                confirmModal.classList.remove('active');
-                if (deleteCallback) deleteCallback();
-            });
-
-            // Autocomplete for stock search
-            symbolSearch.addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                if (searchTimeout) clearTimeout(searchTimeout);
-
-                if (query.length < 2) {
-                    autocompleteList.classList.remove('active');
-                    return;
-                }
-
-                searchTimeout = setTimeout(() => searchStocks(query), 500);
-            });
-
-            symbolSearch.addEventListener('focus', () => {
-                if (autocompleteList.children.length > 0) {
-                    autocompleteList.classList.add('active');
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.autocomplete-wrapper')) {
-                    autocompleteList.classList.remove('active');
-                    document.getElementById('etfAutocompleteList').classList.remove('active');
-                }
-            });
-
-            // VİOP position buttons
-            document.querySelectorAll('#viopPositionSelect .currency-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#viopPositionSelect .currency-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                });
-            });
-
-            // ETF Search
-            const etfSearch = document.getElementById('etfSearch');
-            const etfAutocompleteList = document.getElementById('etfAutocompleteList');
-
-            etfSearch.addEventListener('input', (e) => {
-                const query = e.target.value.trim();
-                if (searchTimeout) clearTimeout(searchTimeout);
-
-                if (query.length < 2) {
-                    etfAutocompleteList.classList.remove('active');
-                    return;
-                }
-
-                searchTimeout = setTimeout(() => searchEtfs(query), 500);
-            });
-
-            etfSearch.addEventListener('focus', () => {
-                if (etfAutocompleteList.children.length > 0) {
-                    etfAutocompleteList.classList.add('active');
-                }
-            });
-        }
-
-        // ETF Search via Poe API
-        function searchEtfs(query) {
-            if (!window.Poe) {
-                showManualEtfEntry(query);
-                return;
-            }
-
-            const etfAutocompleteList = document.getElementById('etfAutocompleteList');
-            etfAutocompleteList.innerHTML = '<div class="autocomplete-loading"><i class="fas fa-spinner fa-spin"></i> Aranıyor...</div>';
-            etfAutocompleteList.classList.add('active');
-
-            window.Poe.registerHandler('etf-search-handler', (result) => {
-                const msg = result.responses[0];
-                if (msg.status === 'complete') {
-                    try {
-                        const content = msg.content;
-                        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) ||
-                                         content.match(/\[[\s\S]*\]/);
-                        let etfs = [];
-                        if (jsonMatch) {
-                            etfs = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-                        }
-                        displayEtfResults(etfs, query);
-                    } catch (err) {
-                        showManualEtfEntry(query);
-                    }
-                } else if (msg.status === 'error') {
-                    showManualEtfEntry(query);
-                }
-            });
-
-            window.Poe.sendUserMessage(
-                `@Grok-4-Fast-Non-Reasoning "${query}" aramasıyla eşleşen US ETF'lerini bul (NYSE, NASDAQ). Maksimum 5 sonuç. SADECE JSON array döndür:
-[{"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust"}, ...]
-Eşleşme yoksa boş array [] döndür.`,
-                {
-                    handler: 'etf-search-handler',
-                    stream: false,
-                    openChat: false
-                }
-            ).catch(() => showManualEtfEntry(query));
-        }
-
-        function displayEtfResults(etfs, query) {
-            const etfAutocompleteList = document.getElementById('etfAutocompleteList');
-            if (!etfs || etfs.length === 0) {
-                showManualEtfEntry(query);
-                return;
-            }
-
-            etfAutocompleteList.innerHTML = etfs.map(e => `
-                <div class="autocomplete-item" data-symbol="${e.symbol}" data-name="${e.name || ''}">
-                    <div class="symbol">${e.symbol}</div>
-                    <div class="name">${e.name || ''}</div>
-                </div>
-            `).join('');
-
-            etfAutocompleteList.querySelectorAll('.autocomplete-item').forEach(item => {
-                item.addEventListener('click', () => selectEtf(item.dataset.symbol, item.dataset.name));
-            });
-
-            etfAutocompleteList.classList.add('active');
-        }
-
-        function showManualEtfEntry(query) {
-            const etfAutocompleteList = document.getElementById('etfAutocompleteList');
-            etfAutocompleteList.innerHTML = `
-                <div class="autocomplete-item" data-symbol="${query.toUpperCase()}" data-name="">
-                    <div class="symbol">${query.toUpperCase()}</div>
-                    <div class="name">Manuel giriş</div>
-                </div>
-            `;
-            etfAutocompleteList.querySelector('.autocomplete-item').addEventListener('click', () => {
-                selectEtf(query.toUpperCase(), '');
-            });
-            etfAutocompleteList.classList.add('active');
-        }
-
-        function selectEtf(symbol, name) {
-            document.getElementById('etfSymbol').value = symbol;
-            document.getElementById('etfName').value = name;
-            document.getElementById('selectedEtf').value = name ? `${symbol} - ${name}` : symbol;
-            document.getElementById('etfSearch').value = '';
-            document.getElementById('etfAutocompleteList').classList.remove('active');
-        }
-
-        // Stock Search via Poe API
-        function searchStocks(query) {
-            if (!window.Poe) {
-                // Fallback: show manual entry
-                showManualStockEntry(query);
-                return;
-            }
-
-            autocompleteList.innerHTML = '<div class="autocomplete-loading"><i class="fas fa-spinner fa-spin"></i> Aranıyor...</div>';
-            autocompleteList.classList.add('active');
-
-            const market = currentType === 'stock-tr' ? 'BIST (Borsa Istanbul)' : 'US Stock Market (NYSE, NASDAQ)';
-
-            window.Poe.registerHandler('stock-search-handler', (result) => {
-                const msg = result.responses[0];
-                if (msg.status === 'complete') {
-                    try {
-                        const content = msg.content;
-                        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) ||
-                                         content.match(/\[[\s\S]*\]/);
-                        let stocks = [];
-                        if (jsonMatch) {
-                            stocks = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-                        }
-                        displayStockResults(stocks, query);
-                    } catch (err) {
-                        showManualStockEntry(query);
-                    }
-                } else if (msg.status === 'error') {
-                    showManualStockEntry(query);
-                }
-            });
-
-            window.Poe.sendUserMessage(
-                `@Grok-4-Fast-Non-Reasoning "${query}" aramasıyla eşleşen ${market} hisselerini bul. Maksimum 5 sonuç. SADECE JSON array döndür:
-[{"symbol": "AAPL", "name": "Apple Inc."}, ...]
-Eşleşme yoksa boş array [] döndür.`,
-                {
-                    handler: 'stock-search-handler',
-                    stream: false,
-                    openChat: false
-                }
-            ).catch(() => showManualStockEntry(query));
-        }
-
-        function displayStockResults(stocks, query) {
-            if (!stocks || stocks.length === 0) {
-                showManualStockEntry(query);
-                return;
-            }
-
-            autocompleteList.innerHTML = stocks.map(s => `
-                <div class="autocomplete-item" data-symbol="${s.symbol}" data-name="${s.name || ''}">
-                    <div class="symbol">${s.symbol}</div>
-                    <div class="name">${s.name || ''}</div>
-                </div>
-            `).join('');
-
-            autocompleteList.querySelectorAll('.autocomplete-item').forEach(item => {
-                item.addEventListener('click', () => selectStock(item.dataset.symbol, item.dataset.name));
-            });
-
-            autocompleteList.classList.add('active');
-        }
-
-        function showManualStockEntry(query) {
-            autocompleteList.innerHTML = `
-                <div class="autocomplete-item" data-symbol="${query.toUpperCase()}" data-name="">
-                    <div class="symbol">${query.toUpperCase()}</div>
-                    <div class="name">Manuel giriş</div>
-                </div>
-            `;
-            autocompleteList.querySelector('.autocomplete-item').addEventListener('click', () => {
-                selectStock(query.toUpperCase(), '');
-            });
-            autocompleteList.classList.add('active');
-        }
-
-        function selectStock(symbol, name) {
-            document.getElementById('symbol').value = symbol;
-            document.getElementById('name').value = name;
-            document.getElementById('selectedStock').value = name ? `${symbol} - ${name}` : symbol;
-            symbolSearch.value = '';
-            autocompleteList.classList.remove('active');
-        }
-
-        function showConfirm(message, callback) {
-            document.getElementById('confirmMessage').textContent = message;
-            deleteCallback = callback;
-            confirmModal.classList.add('active');
-        }
-
-        function switchType(type) {
-            currentType = type;
-            typeTabs.querySelectorAll('.tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.type === type);
-            });
-
-            document.getElementById('stockFields').style.display =
-                (type === 'stock-us' || type === 'stock-tr') ? 'block' : 'none';
-            document.getElementById('cashFields').style.display = type === 'cash' ? 'block' : 'none';
-            document.getElementById('depositFields').style.display = type === 'deposit' ? 'block' : 'none';
-            document.getElementById('goldFields').style.display = type === 'gold' ? 'block' : 'none';
-            document.getElementById('cryptoFields').style.display = type === 'crypto' ? 'block' : 'none';
-            document.getElementById('etfFields').style.display = type === 'etf-us' ? 'block' : 'none';
-            document.getElementById('fundFields').style.display = type === 'fund-tr' ? 'block' : 'none';
-            document.getElementById('viopFields').style.display = type === 'viop' ? 'block' : 'none';
-
-            // Update price unit label
-            document.getElementById('priceUnit').textContent = type === 'stock-tr' ? '(TRY)' : '(USD)';
-
-            // Clear stock selection when switching
-            document.getElementById('symbol').value = '';
-            document.getElementById('name').value = '';
-            document.getElementById('selectedStock').value = '';
-            symbolSearch.value = '';
-
-            // Clear ETF selection
-            document.getElementById('etfSymbol').value = '';
-            document.getElementById('etfName').value = '';
-            document.getElementById('selectedEtf').value = '';
-            document.getElementById('etfSearch').value = '';
-
-            // Set default date for deposit
-            if (type === 'deposit') {
-                document.getElementById('depositStartDate').value = new Date().toISOString().split('T')[0];
-            }
-        }
-
-        function switchFilter(filter) {
-            currentFilter = filter;
-            filterTabs.querySelectorAll('.filter-tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.filter === filter);
-            });
-            renderHoldings();
-        }
-
-        function openModal(holding = null) {
-            editingId = holding ? holding.id : null;
-            document.getElementById('modalTitle').textContent = holding ? 'Varlık Düzenle' : 'Varlık Ekle';
-            document.getElementById('submitBtn').textContent = holding ? 'Güncelle' : 'Ekle';
-            document.getElementById('deleteBtn').style.display = holding ? 'block' : 'none';
-
-            addForm.reset();
-            // Reset currency selections
-            document.querySelectorAll('#currencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('#currencySelect .currency-btn[data-currency="TRY"]').classList.add('active');
-            document.querySelectorAll('#depositCurrencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('#depositCurrencySelect .currency-btn[data-currency="TRY"]').classList.add('active');
-            document.querySelectorAll('#viopPositionSelect .currency-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('#viopPositionSelect .currency-btn[data-position="long"]').classList.add('active');
-            document.getElementById('symbol').value = '';
-            document.getElementById('name').value = '';
-            document.getElementById('selectedStock').value = '';
-            document.getElementById('etfSymbol').value = '';
-            document.getElementById('etfName').value = '';
-            document.getElementById('selectedEtf').value = '';
-
-            if (holding) {
-                switchType(holding.type);
-                fillForm(holding);
-            } else {
-                switchType('stock-us');
-            }
-
-            addModal.classList.add('active');
-        }
-
-        function fillForm(h) {
-            if (h.type === 'stock-us' || h.type === 'stock-tr') {
-                document.getElementById('symbol').value = h.symbol;
-                document.getElementById('name').value = h.name || '';
-                document.getElementById('selectedStock').value = h.name ? `${h.symbol} - ${h.name}` : h.symbol;
-                document.getElementById('quantity').value = h.quantity;
-                document.getElementById('buyPrice').value = h.buyPrice;
-                document.getElementById('currentPrice').value = h.currentPrice;
-            } else if (h.type === 'cash') {
-                document.querySelectorAll('#currencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector(`#currencySelect .currency-btn[data-currency="${h.currency}"]`)?.classList.add('active');
-                document.getElementById('cashAmount').value = h.amount;
-                document.getElementById('cashNote').value = h.note || '';
-            } else if (h.type === 'deposit') {
-                document.querySelectorAll('#depositCurrencySelect .currency-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector(`#depositCurrencySelect .currency-btn[data-currency="${h.currency}"]`)?.classList.add('active');
-                document.getElementById('depositAmount').value = h.principal;
-                document.getElementById('interestRate').value = h.interestRate;
-                document.getElementById('depositStartDate').value = h.startDate;
-                document.getElementById('depositNote').value = h.note || '';
-            } else if (h.type === 'gold') {
-                document.getElementById('goldType').value = h.goldType;
-                document.getElementById('goldQuantity').value = h.quantity;
-                document.getElementById('goldBuyPrice').value = h.buyPrice;
-                document.getElementById('goldCurrentPrice').value = h.currentPrice;
-            } else if (h.type === 'crypto') {
-                document.getElementById('cryptoSymbol').value = h.symbol;
-                document.getElementById('cryptoQuantity').value = h.quantity;
-                document.getElementById('cryptoBuyPrice').value = h.buyPrice;
-                document.getElementById('cryptoCurrentPrice').value = h.currentPrice;
-            } else if (h.type === 'etf-us') {
-                document.getElementById('etfSymbol').value = h.symbol;
-                document.getElementById('etfName').value = h.name || '';
-                document.getElementById('selectedEtf').value = h.name ? `${h.symbol} - ${h.name}` : h.symbol;
-                document.getElementById('etfQuantity').value = h.quantity;
-                document.getElementById('etfBuyPrice').value = h.buyPrice;
-                document.getElementById('etfCurrentPrice').value = h.currentPrice;
-            } else if (h.type === 'fund-tr') {
-                document.getElementById('fundCode').value = h.symbol;
-                document.getElementById('fundName').value = h.name || '';
-                document.getElementById('fundQuantity').value = h.quantity;
-                document.getElementById('fundBuyPrice').value = h.buyPrice;
-                document.getElementById('fundCurrentPrice').value = h.currentPrice;
-            } else if (h.type === 'viop') {
-                document.getElementById('viopContract').value = h.contract;
-                document.querySelectorAll('#viopPositionSelect .currency-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector(`#viopPositionSelect .currency-btn[data-position="${h.position}"]`)?.classList.add('active');
-                document.getElementById('viopQuantity').value = h.quantity;
-                document.getElementById('viopEntryPrice').value = h.entryPrice;
-                document.getElementById('viopCurrentPrice').value = h.currentPrice;
-                document.getElementById('viopMultiplier').value = h.multiplier || 100;
-            }
-        }
-
-        function closeModal() {
-            addModal.classList.remove('active');
-            editingId = null;
-        }
-
-        function handleSubmit(e) {
-            e.preventDefault();
-
-            let holding = {
-                id: editingId || Date.now().toString(),
-                type: currentType,
-                createdAt: editingId ? holdings.find(h => h.id === editingId)?.createdAt : new Date().toISOString()
-            };
-
-            if (currentType === 'stock-us' || currentType === 'stock-tr') {
-                const symbol = document.getElementById('symbol').value.trim().toUpperCase();
-                const quantity = parseFloat(document.getElementById('quantity').value);
-                const buyPrice = parseFloat(document.getElementById('buyPrice').value);
-                const currentPrice = parseFloat(document.getElementById('currentPrice').value);
-
-                if (!symbol || isNaN(quantity) || isNaN(buyPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = {
-                    ...holding,
-                    symbol,
-                    name: document.getElementById('name').value.trim(),
-                    quantity,
-                    buyPrice,
-                    currentPrice
-                };
-            } else if (currentType === 'cash') {
-                const currency = document.querySelector('#currencySelect .currency-btn.active')?.dataset.currency || 'TRY';
-                const amount = parseFloat(document.getElementById('cashAmount').value);
-
-                if (isNaN(amount)) {
-                    showToast('Lütfen miktar girin', true);
-                    return;
-                }
-
-                holding = {
-                    ...holding,
-                    currency,
-                    amount,
-                    note: document.getElementById('cashNote').value.trim()
-                };
-            } else if (currentType === 'deposit') {
-                const currency = document.querySelector('#depositCurrencySelect .currency-btn.active')?.dataset.currency || 'TRY';
-                const principal = parseFloat(document.getElementById('depositAmount').value);
-                const interestRate = parseFloat(document.getElementById('interestRate').value);
-                const startDate = document.getElementById('depositStartDate').value;
-
-                if (isNaN(principal) || isNaN(interestRate) || !startDate) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = {
-                    ...holding,
-                    currency,
-                    principal,
-                    interestRate,
-                    startDate,
-                    note: document.getElementById('depositNote').value.trim()
-                };
-            } else if (currentType === 'gold') {
-                const goldType = document.getElementById('goldType').value;
-                const quantity = parseFloat(document.getElementById('goldQuantity').value);
-                const buyPrice = parseFloat(document.getElementById('goldBuyPrice').value);
-                const currentPrice = parseFloat(document.getElementById('goldCurrentPrice').value);
-
-                if (isNaN(quantity) || isNaN(buyPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = { ...holding, goldType, quantity, buyPrice, currentPrice };
-            } else if (currentType === 'crypto') {
-                const symbol = document.getElementById('cryptoSymbol').value.trim().toUpperCase();
-                const quantity = parseFloat(document.getElementById('cryptoQuantity').value);
-                const buyPrice = parseFloat(document.getElementById('cryptoBuyPrice').value);
-                const currentPrice = parseFloat(document.getElementById('cryptoCurrentPrice').value);
-
-                if (!symbol || isNaN(quantity) || isNaN(buyPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = { ...holding, symbol, quantity, buyPrice, currentPrice };
-            } else if (currentType === 'etf-us') {
-                const symbol = document.getElementById('etfSymbol').value.trim().toUpperCase();
-                const quantity = parseFloat(document.getElementById('etfQuantity').value);
-                const buyPrice = parseFloat(document.getElementById('etfBuyPrice').value);
-                const currentPrice = parseFloat(document.getElementById('etfCurrentPrice').value);
-
-                if (!symbol || isNaN(quantity) || isNaN(buyPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = {
-                    ...holding,
-                    symbol,
-                    name: document.getElementById('etfName').value.trim(),
-                    quantity,
-                    buyPrice,
-                    currentPrice
-                };
-            } else if (currentType === 'fund-tr') {
-                const symbol = document.getElementById('fundCode').value.trim().toUpperCase();
-                const name = document.getElementById('fundName').value.trim();
-                const quantity = parseFloat(document.getElementById('fundQuantity').value);
-                const buyPrice = parseFloat(document.getElementById('fundBuyPrice').value);
-                const currentPrice = parseFloat(document.getElementById('fundCurrentPrice').value);
-
-                if (!symbol || isNaN(quantity) || isNaN(buyPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = { ...holding, symbol, name, quantity, buyPrice, currentPrice };
-            } else if (currentType === 'viop') {
-                const contract = document.getElementById('viopContract').value.trim().toUpperCase();
-                const position = document.querySelector('#viopPositionSelect .currency-btn.active')?.dataset.position || 'long';
-                const quantity = parseFloat(document.getElementById('viopQuantity').value);
-                const entryPrice = parseFloat(document.getElementById('viopEntryPrice').value);
-                const currentPrice = parseFloat(document.getElementById('viopCurrentPrice').value);
-                const multiplier = parseFloat(document.getElementById('viopMultiplier').value) || 100;
-
-                if (!contract || isNaN(quantity) || isNaN(entryPrice) || isNaN(currentPrice)) {
-                    showToast('Lütfen tüm alanları doldurun', true);
-                    return;
-                }
-
-                holding = { ...holding, contract, position, quantity, entryPrice, currentPrice, multiplier };
-            }
-
-            if (editingId) {
-                holdings = holdings.map(h => h.id === editingId ? holding : h);
-            } else {
-                holdings.push(holding);
-            }
-
-            saveData();
-            render();
-            closeModal();
-        }
-
-        function deleteHolding(id) {
-            holdings = holdings.filter(h => h.id !== id);
-            saveData();
-            render();
-        }
-
-        // Calculate deposit current value with interest
-        function getDepositCurrentValue(h) {
-            const startDate = new Date(h.startDate);
-            const now = new Date();
-            const daysElapsed = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
-            const interest = h.principal * (h.interestRate / 100) * (daysElapsed / 365);
-            return h.principal + interest;
-        }
-
-        // Get holding value in USD
-        function getHoldingValueUSD(h) {
-            if (h.type === 'stock-us') {
-                return h.quantity * h.currentPrice; // Already USD
-            } else if (h.type === 'stock-tr') {
-                return h.quantity * h.currentPrice / usdTryRate; // TRY to USD
-            } else if (h.type === 'cash') {
-                if (h.currency === 'USD') return h.amount;
-                if (h.currency === 'TRY') return h.amount / usdTryRate;
-                return h.amount * exchangeRates[h.currency];
-            } else if (h.type === 'deposit') {
-                const currentValue = getDepositCurrentValue(h);
-                if (h.currency === 'USD') return currentValue;
-                if (h.currency === 'TRY') return currentValue / usdTryRate;
-                return currentValue * exchangeRates[h.currency];
-            } else if (h.type === 'gold') {
-                return h.quantity * h.currentPrice / usdTryRate; // TRY to USD
-            } else if (h.type === 'crypto') {
-                return h.quantity * h.currentPrice; // USD
-            } else if (h.type === 'etf-us') {
-                return h.quantity * h.currentPrice; // USD
-            } else if (h.type === 'fund-tr') {
-                return h.quantity * h.currentPrice / usdTryRate; // TRY to USD
-            } else if (h.type === 'viop') {
-                // VİOP kar/zarar hesabı: (güncel - giriş) * adet * çarpan
-                const priceDiff = h.currentPrice - h.entryPrice;
-                const direction = h.position === 'long' ? 1 : -1;
-                const pnl = priceDiff * h.quantity * (h.multiplier || 100) * direction;
-                // Başlangıç teminatı + kar/zarar (TRY cinsinden, USD'ye çevir)
-                const initialMargin = h.entryPrice * h.quantity * (h.multiplier || 100) * 0.1; // ~%10 teminat varsayımı
-                return (initialMargin + pnl) / usdTryRate;
-            }
-            return 0;
-        }
-
-        // Get holding cost in USD
-        function getHoldingCostUSD(h) {
-            if (h.type === 'stock-us') {
-                return h.quantity * h.buyPrice;
-            } else if (h.type === 'stock-tr') {
-                return h.quantity * h.buyPrice / usdTryRate;
-            } else if (h.type === 'cash') {
-                return getHoldingValueUSD(h); // No profit/loss for cash
-            } else if (h.type === 'deposit') {
-                // Cost is the principal
-                if (h.currency === 'USD') return h.principal;
-                if (h.currency === 'TRY') return h.principal / usdTryRate;
-                return h.principal * exchangeRates[h.currency];
-            } else if (h.type === 'gold') {
-                return h.quantity * h.buyPrice / usdTryRate;
-            } else if (h.type === 'crypto') {
-                return h.quantity * h.buyPrice;
-            } else if (h.type === 'etf-us') {
-                return h.quantity * h.buyPrice;
-            } else if (h.type === 'fund-tr') {
-                return h.quantity * h.buyPrice / usdTryRate;
-            } else if (h.type === 'viop') {
-                // Giriş teminatı
-                const initialMargin = h.entryPrice * h.quantity * (h.multiplier || 100) * 0.1;
-                return initialMargin / usdTryRate;
-            }
-            return 0;
-        }
-
-        function formatUSD(amount) {
-            return '$' + new Intl.NumberFormat('en-US', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount);
-        }
-
-        function render() {
-            renderSummary();
-            renderPerformance();
-            renderChart();
-            renderHoldings();
-        }
-
-        function renderSummary() {
-            const total = holdings.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-            const cost = holdings.reduce((sum, h) => sum + getHoldingCostUSD(h), 0);
-            const profitLoss = total - cost;
-            const profitPercent = cost > 0 ? (profitLoss / cost * 100) : 0;
-
-            const stocks = holdings.filter(h => h.type.startsWith('stock') || h.type === 'crypto' || h.type === 'gold');
-            const stockTotal = stocks.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-
-            const cash = holdings.filter(h => h.type === 'cash');
-            const cashTotal = cash.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-
-            document.getElementById('totalValue').textContent = formatUSD(total);
-            document.getElementById('stockValue').textContent = formatUSD(stockTotal);
-            document.getElementById('cashValue').textContent = formatUSD(cashTotal);
-
-            const profitEl = document.getElementById('totalProfitLoss');
-            if (cost > 0) {
-                const sign = profitLoss >= 0 ? '+' : '';
-                profitEl.textContent = `${sign}${formatUSD(profitLoss)} (${sign}${profitPercent.toFixed(1)}%)`;
-                profitEl.className = `summary-sub ${profitLoss >= 0 ? 'profit' : 'loss'}`;
-            } else {
-                profitEl.textContent = '--';
-                profitEl.className = 'summary-sub';
-            }
-        }
-
-        function renderPerformance() {
-            const weeklyEl = document.getElementById('weeklyPerf');
-            const monthlyEl = document.getElementById('monthlyPerf');
-            const yearlyEl = document.getElementById('yearlyPerf');
-
-            const now = new Date();
-            const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-            const oneMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-            const oneYearAgo = new Date(now - 365 * 24 * 60 * 60 * 1000);
-
-            const currentValue = holdings.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-
-            // Find historical values
-            const weeklyHistory = priceHistory.find(p => new Date(p.date) <= oneWeekAgo);
-            const monthlyHistory = priceHistory.find(p => new Date(p.date) <= oneMonthAgo);
-            const yearlyHistory = priceHistory.find(p => new Date(p.date) <= oneYearAgo);
-
-            if (weeklyHistory && weeklyHistory.totalValue > 0) {
-                const weeklyChange = ((currentValue - weeklyHistory.totalValue) / weeklyHistory.totalValue * 100);
-                const sign = weeklyChange >= 0 ? '+' : '';
-                weeklyEl.textContent = `${sign}${weeklyChange.toFixed(1)}%`;
-                weeklyEl.className = `perf-value ${weeklyChange >= 0 ? 'profit' : 'loss'}`;
-            } else {
-                weeklyEl.textContent = '--';
-                weeklyEl.className = 'perf-value';
-            }
-
-            if (monthlyHistory && monthlyHistory.totalValue > 0) {
-                const monthlyChange = ((currentValue - monthlyHistory.totalValue) / monthlyHistory.totalValue * 100);
-                const sign = monthlyChange >= 0 ? '+' : '';
-                monthlyEl.textContent = `${sign}${monthlyChange.toFixed(1)}%`;
-                monthlyEl.className = `perf-value ${monthlyChange >= 0 ? 'profit' : 'loss'}`;
-            } else {
-                monthlyEl.textContent = '--';
-                monthlyEl.className = 'perf-value';
-            }
-
-            if (yearlyHistory && yearlyHistory.totalValue > 0) {
-                const yearlyChange = ((currentValue - yearlyHistory.totalValue) / yearlyHistory.totalValue * 100);
-                const sign = yearlyChange >= 0 ? '+' : '';
-                yearlyEl.textContent = `${sign}${yearlyChange.toFixed(1)}%`;
-                yearlyEl.className = `perf-value ${yearlyChange >= 0 ? 'profit' : 'loss'}`;
-            } else {
-                yearlyEl.textContent = '--';
-                yearlyEl.className = 'perf-value';
-            }
-        }
-
-        function renderChart() {
-            const categories = [
-                { type: 'stock-us', label: 'ABD Hisse', color: '#3b82f6' },
-                { type: 'stock-tr', label: 'BIST Hisse', color: '#ef4444' },
-                { type: 'etf-us', label: 'ETF', color: '#06b6d4' },
-                { type: 'fund-tr', label: 'Fon', color: '#ec4899' },
-                { type: 'viop', label: 'VİOP', color: '#84cc16' },
-                { type: 'cash', label: 'Kasa', color: '#10b981' },
-                { type: 'deposit', label: 'Faiz', color: '#8b5cf6' },
-                { type: 'gold', label: 'Altın', color: '#fbbf24' },
-                { type: 'crypto', label: 'Kripto', color: '#f59e0b' }
-            ];
-
-            const total = holdings.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-            const data = categories.map(cat => ({
-                ...cat,
-                value: holdings.filter(h => h.type === cat.type).reduce((sum, h) => sum + getHoldingValueUSD(h), 0)
-            })).filter(d => d.value > 0);
-
-            const chartBar = document.getElementById('chartBar');
-            const chartLegend = document.getElementById('chartLegend');
-
-            if (total === 0) {
-                chartBar.innerHTML = '<div style="width:100%;background:var(--border-color);height:100%;border-radius:6px;"></div>';
-                chartLegend.innerHTML = '<span style="color:var(--text-muted);">Henüz varlık yok</span>';
-                return;
-            }
-
-            chartBar.innerHTML = data.map(d =>
-                `<div class="chart-segment" style="width:${(d.value/total*100).toFixed(1)}%;background:${d.color};"></div>`
-            ).join('');
-
-            chartLegend.innerHTML = data.map(d => `
-                <div class="legend-item">
-                    <div class="legend-dot" style="background:${d.color}"></div>
-                    <span>${d.label} ${(d.value/total*100).toFixed(0)}%</span>
-                </div>
-            `).join('');
-        }
-
-        function renderHoldings() {
-            let filtered = holdings;
-            if (currentFilter !== 'all') {
-                filtered = holdings.filter(h => h.type === currentFilter);
-            }
-
-            filtered = filtered.sort((a, b) => getHoldingValueUSD(b) - getHoldingValueUSD(a));
-
-            if (filtered.length === 0) {
-                holdingsList.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-wallet"></i>
-                        <p>Henüz varlık eklenmedi</p>
-                    </div>
-                `;
-                return;
-            }
-
-            holdingsList.innerHTML = filtered.map(h => renderHoldingCard(h)).join('');
-
-            holdingsList.querySelectorAll('.holding-card').forEach((card, i) => {
-                card.addEventListener('click', () => openModal(filtered[i]));
-            });
-        }
-
-        function renderHoldingCard(h) {
-            const valueUSD = getHoldingValueUSD(h);
-            const costUSD = getHoldingCostUSD(h);
-            const profitLoss = valueUSD - costUSD;
-            const profitPercent = costUSD > 0 ? (profitLoss / costUSD * 100) : 0;
-
-            let icon = 'stock-us';
-            let title = '';
-            let detail = '';
-            let emoji = '📊';
-
-            if (h.type === 'stock-us') {
-                icon = 'stock-us';
-                emoji = '🇺🇸';
-                title = h.symbol;
-                detail = `${h.quantity} adet · $${h.currentPrice.toFixed(2)}`;
-            } else if (h.type === 'stock-tr') {
-                icon = 'stock-tr';
-                emoji = '🇹🇷';
-                title = h.symbol;
-                detail = `${h.quantity} adet · ₺${h.currentPrice.toFixed(2)}`;
-            } else if (h.type === 'cash') {
-                icon = 'cash';
-                emoji = '💵';
-                const symbols = { TRY: '₺', USD: '$', EUR: '€', GBP: '£' };
-                title = `${symbols[h.currency]}${h.amount.toLocaleString('tr-TR')} ${h.currency}`;
-                detail = h.note || 'Kasa';
-            } else if (h.type === 'deposit') {
-                icon = 'deposit';
-                emoji = '🏦';
-                const symbols = { TRY: '₺', USD: '$' };
-                const currentValue = getDepositCurrentValue(h);
-                const interest = currentValue - h.principal;
-                title = h.note || 'Faiz Hesabı';
-                detail = `${symbols[h.currency]}${h.principal.toLocaleString('tr-TR')} · %${h.interestRate} · +${symbols[h.currency]}${interest.toFixed(0)} faiz`;
-            } else if (h.type === 'gold') {
-                icon = 'gold';
-                emoji = '🥇';
-                const goldNames = { gram: 'Gram Altın', ceyrek: 'Çeyrek', yarim: 'Yarım', tam: 'Tam' };
-                title = goldNames[h.goldType];
-                detail = `${h.quantity} adet · ₺${h.currentPrice.toFixed(0)}`;
-            } else if (h.type === 'crypto') {
-                icon = 'crypto';
-                emoji = '₿';
-                title = h.symbol;
-                detail = `${h.quantity} · $${h.currentPrice.toFixed(2)}`;
-            } else if (h.type === 'etf-us') {
-                icon = 'etf-us';
-                emoji = '📊';
-                title = h.symbol;
-                detail = `${h.quantity} adet · $${h.currentPrice.toFixed(2)}`;
-            } else if (h.type === 'fund-tr') {
-                icon = 'fund-tr';
-                emoji = '📈';
-                title = h.symbol;
-                detail = `${h.quantity} pay · ₺${h.currentPrice.toFixed(2)}`;
-            } else if (h.type === 'viop') {
-                icon = 'viop';
-                emoji = h.position === 'long' ? '📈' : '📉';
-                title = h.contract;
-                const priceDiff = h.currentPrice - h.entryPrice;
-                const direction = h.position === 'long' ? 1 : -1;
-                const pnl = priceDiff * h.quantity * (h.multiplier || 100) * direction;
-                const posLabel = h.position === 'long' ? 'L' : 'S';
-                detail = `${h.quantity} kontrat · ${posLabel} · ₺${pnl >= 0 ? '+' : ''}${pnl.toFixed(0)} K/Z`;
-            }
-
-            const sign = profitLoss >= 0 ? '+' : '';
-            const profitClass = profitLoss >= 0 ? 'profit' : 'loss';
-            const showProfitLoss = h.type !== 'cash';
-
-            return `
-                <div class="holding-card">
-                    <div class="holding-icon ${icon}">
-                        ${emoji}
-                    </div>
-                    <div class="holding-info">
-                        <div class="holding-name">${title}${h.name ? ` · ${h.name}` : ''}</div>
-                        <div class="holding-detail">${detail}</div>
-                    </div>
-                    <div class="holding-values">
-                        <div class="holding-value">${formatUSD(valueUSD)}</div>
-                        ${showProfitLoss ? `<div class="holding-change ${profitClass}">${sign}${profitPercent.toFixed(1)}%</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Data persistence
-        function saveData() {
-            // Record price history for performance tracking
-            const currentValue = holdings.reduce((sum, h) => sum + getHoldingValueUSD(h), 0);
-            const today = new Date().toISOString().split('T')[0];
-
-            // Update or add today's entry
-            const existingIndex = priceHistory.findIndex(p => p.date.startsWith(today));
-            if (existingIndex >= 0) {
-                priceHistory[existingIndex].totalValue = currentValue;
-            } else {
-                priceHistory.unshift({ date: new Date().toISOString(), totalValue: currentValue });
-            }
-
-            // Keep only last 400 days (for yearly performance)
-            priceHistory = priceHistory.slice(0, 400);
-        }
-
-        function loadData() {
-            // Data loaded via import
-        }
-
-        function exportData() {
-            const data = {
-                version: 2,
-                exportDate: new Date().toISOString(),
-                holdings: holdings,
-                priceHistory: priceHistory,
-                usdTryRate: usdTryRate
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `portfolio-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function importData(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.holdings && Array.isArray(data.holdings)) {
-                        holdings = data.holdings;
-                        priceHistory = data.priceHistory || [];
-                        if (data.usdTryRate) usdTryRate = data.usdTryRate;
-                        render();
-                        showToast('Veriler başarıyla yüklendi!');
-                    } else {
-                        showToast('Geçersiz dosya formatı', true);
-                    }
-                } catch (err) {
-                    showToast('Dosya okunamadı', true);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function showToast(message, isError = false) {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${isError ? 'var(--accent-red)' : 'var(--accent-green)'};
-                color: white;
-                padding: 12px 24px;
-                border-radius: 12px;
-                font-weight: 500;
-                z-index: 2000;
-                animation: fadeInUp 0.3s ease;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        function showBanner(message, isError = false) {
-            const container = document.getElementById('bannerContainer');
-            container.innerHTML = `
-                <div class="update-banner ${isError ? 'error' : ''}">
-                    <i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
-                    <span>${message}</span>
-                    <button class="close-banner" onclick="this.parentElement.remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            setTimeout(() => container.innerHTML = '', 5000);
-        }
-
-        function updateLastUpdateDisplay() {
-            const el = document.getElementById('lastUpdate');
-            if (lastUpdateTime) {
-                const now = new Date();
-                const diff = Math.floor((now - lastUpdateTime) / 60000);
-                if (diff < 1) {
-                    el.textContent = 'Son güncelleme: Az önce';
-                } else if (diff < 60) {
-                    el.textContent = `Son güncelleme: ${diff} dakika önce`;
-                } else {
-                    el.textContent = `Son güncelleme: ${lastUpdateTime.toLocaleTimeString('tr-TR')}`;
-                }
-            }
-        }
-
-        // Import/Export buttons
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            if (holdings.length === 0) {
-                showToast('Dışa aktarılacak veri yok', true);
-                return;
-            }
-            exportData();
+    </div><script>
+/* =======================
+   STATE
+======================= */
+let holdings = [];
+let priceHistory = [];
+let currentType = 'stock-us';
+let currentFilter = 'all';
+let editingId = null;
+let deleteCallback = null;
+let searchTimeout = null;
+let isUpdating = false;
+let lastUpdateTime = null;
+
+/* =======================
+   KURLAR
+======================= */
+const exchangeRates = {
+    USD: 1,
+    TRY: 0.026,
+    EUR: 1.08,
+    GBP: 1.26
+};
+let usdTryRate = 38.5;
+
+/* =======================
+   DOM
+======================= */
+const addBtn = document.getElementById('addBtn');
+const addModal = document.getElementById('addModal');
+const addForm = document.getElementById('addForm');
+const typeTabs = document.getElementById('typeTabs');
+const filterTabs = document.getElementById('filterTabs');
+const holdingsList = document.getElementById('holdingsList');
+const themeToggle = document.getElementById('themeToggle');
+const confirmModal = document.getElementById('confirmModal');
+const refreshBtn = document.getElementById('refreshBtn');
+
+/* =======================
+   INIT
+======================= */
+function init() {
+    setupEventListeners();
+    setupTheme();
+    render();
+}
+init();
+
+/* =======================
+   THEME
+======================= */
+function setupTheme() {
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.classList.add('light');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+}
+
+/* =======================
+   EVENTS
+======================= */
+function setupEventListeners() {
+    addBtn.addEventListener('click', () => openModal());
+    themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('light');
+        themeToggle.innerHTML =
+            document.documentElement.classList.contains('light')
+                ? '<i class="fas fa-sun"></i>'
+                : '<i class="fas fa-moon"></i>';
+    });
+
+    typeTabs.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => switchType(tab.dataset.type));
+    });
+
+    filterTabs.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchFilter(tab.dataset.filter));
+    });
+
+    document.getElementById('confirmCancel').onclick = () =>
+        confirmModal.classList.remove('active');
+
+    document.getElementById('confirmOk').onclick = () => {
+        confirmModal.classList.remove('active');
+        if (deleteCallback) deleteCallback();
+    };
+}
+
+/* =======================
+   TYPE / FILTER
+======================= */
+function switchType(type) {
+    currentType = type;
+
+    typeTabs.querySelectorAll('.tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.type === type)
+    );
+
+    [
+        'stockFields','cashFields','depositFields','goldFields',
+        'silverFields','platinumFields','copperFields',
+        'cryptoFields','etfFields','fundFields','viopFields'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    if (document.getElementById(type + 'Fields')) {
+        document.getElementById(type + 'Fields').style.display = 'block';
+    }
+}
+
+function switchFilter(filter) {
+    currentFilter = filter;
+    filterTabs.querySelectorAll(t =>
+        t.classList.toggle('active', t.dataset.filter === filter)
+    );
+    renderHoldings();
+}
+
+/* =======================
+   MODAL
+======================= */
+function openModal(h = null) {
+    editingId = h ? h.id : null;
+    addModal.classList.add('active');
+    if (h) fillForm(h);
+}
+function closeModal() {
+    addModal.classList.remove('active');
+    editingId = null;
+}
+
+/* =======================
+   VALUE CALC
+======================= */
+function getHoldingValueUSD(h) {
+    if (h.type === 'stock-us') return h.quantity * h.currentPrice;
+    if (h.type === 'stock-tr') return h.quantity * h.currentPrice / usdTryRate;
+    if (h.type === 'gold') return h.quantity * h.currentPrice / usdTryRate;
+    if (h.type === 'silver') return h.quantity * h.currentPrice / usdTryRate;
+    if (h.type === 'platinum') return h.quantity * h.currentPrice / usdTryRate;
+    if (h.type === 'copper') return h.quantity * h.currentPrice / usdTryRate;
+    if (h.type === 'crypto') return h.quantity * h.currentPrice;
+    return 0;
+}
+
+/* =======================
+   RENDER
+======================= */
+function render() {
+    renderSummary();
+    renderChart();
+    renderHoldings();
+}
+
+function renderSummary() {
+    const total = holdings.reduce((s, h) => s + getHoldingValueUSD(h), 0);
+    document.getElementById('totalValue').textContent =
+        '$' + total.toFixed(0);
+}
+
+function renderChart() {
+    const categories = [
+        { type:'gold', label:'Altın', color:'#fbbf24' },
+        { type:'silver', label:'Gümüş', color:'#9ca3af' },
+        { type:'platinum', label:'Platin', color:'#e5e7eb' },
+        { type:'copper', label:'Bakır', color:'#b45309' },
+        { type:'crypto', label:'Kripto', color:'#f59e0b' }
+    ];
+
+    const total = holdings.reduce((s,h)=>s+getHoldingValueUSD(h),0);
+    const chartBar = document.getElementById('chartBar');
+    const chartLegend = document.getElementById('chartLegend');
+
+    if (!total) {
+        chartBar.innerHTML = '';
+        chartLegend.innerHTML = '<span style="color:var(--text-muted)">Henüz varlık yok</span>';
+        return;
+    }
+
+    chartBar.innerHTML = categories.map(c => {
+        const val = holdings
+            .filter(h=>h.type===c.type)
+            .reduce((s,h)=>s+getHoldingValueUSD(h),0);
+        if (!val) return '';
+        return `<div class="chart-segment" style="width:${(val/total*100).toFixed(1)}%;background:${c.color}"></div>`;
+    }).join('');
+
+    chartLegend.innerHTML = categories.map(c => `
+        <div class="legend-item">
+            <div class="legend-dot" style="background:${c.color}"></div>
+            <span>${c.label}</span>
+        </div>
+    `).join('');
+}
+
+function renderHoldings() {
+    let list = currentFilter==='all'
+        ? holdings
+        : holdings.filter(h=>h.type===currentFilter);
+
+    if (!list.length) {
+        holdingsList.innerHTML =
+            '<div class="empty-state"><i class="fas fa-wallet"></i><p>Henüz varlık yok</p></div>';
+        return;
+    }
+
+    holdingsList.innerHTML = list.map(h=>`
+        <div class="holding-card">
+            <div class="holding-info">
+                <div class="holding-name">${h.type}</div>
+                <div class="holding-detail">${getHoldingValueUSD(h).toFixed(2)} $</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/* =======================
+   POE PRICE UPDATE
+======================= */
+if (window.Poe) {
+    window.Poe.registerHandler('price-update-handler', result => {
+        const msg = result.responses[0];
+        if (msg.status !== 'complete') return;
+
+        const data = JSON.parse(msg.content.match(/\{[\s\S]*\}/)[0]);
+
+        holdings.forEach(h => {
+            if (h.type==='gold' && data.prices.GOLD_GRAM)
+                h.currentPrice = data.prices.GOLD_GRAM;
+            if (h.type==='silver' && data.prices.SILVER_GRAM)
+                h.currentPrice = data.prices.SILVER_GRAM;
+            if (h.type==='platinum' && data.prices.PLATINUM_GRAM)
+                h.currentPrice = data.prices.PLATINUM_GRAM;
+            if (h.type==='copper' && data.prices.COPPER_KG)
+                h.currentPrice = data.prices.COPPER_KG;
         });
 
-        document.getElementById('importBtn').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
-        });
+        if (data.usdTryRate) usdTryRate = data.usdTryRate;
+        render();
+    });
+}
 
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                importData(file);
-                e.target.value = '';
-            }
-        });
+refreshBtn.onclick = async () => {
+    if (!window.Poe) return;
 
-        // Price Update via Poe API
-        if (window.Poe) {
-            window.Poe.registerHandler('price-update-handler', (result) => {
-                const msg = result.responses[0];
+    let prompt = `Emtia fiyatlarını getir. SADECE JSON:\n`;
+    prompt += `Gram Altın (TRY): GOLD_GRAM\n`;
+    prompt += `Gram Gümüş (TRY): SILVER_GRAM\n`;
+    prompt += `Gram Platin (TRY): PLATINUM_GRAM\n`;
+    prompt += `Bakır (TRY/kg): COPPER_KG\nUSD/TRY kuru`;
 
-                if (msg.status === 'error') {
-                    refreshBtn.classList.remove('updating');
-                    isUpdating = false;
-                    showBanner('Fiyatlar güncellenemedi', true);
-                    return;
-                }
+    await window.Poe.sendUserMessage(
+        `@GPT-5.1 ${prompt}`,
+        { handler:'price-update-handler', stream:false, openChat:false }
+    );
+};
+</script>
 
-                if (msg.status === 'complete') {
-                    refreshBtn.classList.remove('updating');
-                    refreshBtn.classList.add('success');
-                    setTimeout(() => refreshBtn.classList.remove('success'), 2000);
-                    isUpdating = false;
+<footer style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
+    Made by Dasdemir
+</footer>
 
-                    try {
-                        const content = msg.content;
-                        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) ||
-                                         content.match(/\{[\s\S]*"prices"[\s\S]*\}/);
-
-                        let data;
-                        if (jsonMatch) {
-                            const jsonStr = jsonMatch[1] || jsonMatch[0];
-                            data = JSON.parse(jsonStr);
-                        } else {
-                            data = JSON.parse(content);
-                        }
-
-                        if (data.prices) {
-                            let updatedCount = 0;
-
-                            holdings.forEach(h => {
-                                if (h.type === 'stock-us' || h.type === 'stock-tr' || h.type === 'crypto' || h.type === 'etf-us' || h.type === 'fund-tr') {
-                                    const key = h.symbol.toUpperCase();
-                                    if (data.prices[key] !== undefined) {
-                                        h.currentPrice = parseFloat(data.prices[key]);
-                                        updatedCount++;
-                                    }
-                                }
-                                if (h.type === 'viop') {
-                                    const key = h.contract.toUpperCase();
-                                    if (data.prices[key] !== undefined) {
-                                        h.currentPrice = parseFloat(data.prices[key]);
-                                        updatedCount++;
-                                    }
-                                }
-                                if (h.type === 'gold') {
-                                    if (data.prices['GOLD_GRAM'] !== undefined) {
-                                        const gramPrice = parseFloat(data.prices['GOLD_GRAM']);
-                                        const multipliers = { gram: 1, ceyrek: 1.75, yarim: 3.5, tam: 7 };
-                                        h.currentPrice = gramPrice * (multipliers[h.goldType] || 1);
-                                        updatedCount++;
-                                    }
-                                }
-                            });
-
-                            if (data.usdTryRate) {
-                                usdTryRate = parseFloat(data.usdTryRate);
-                            }
-
-                            lastUpdateTime = new Date();
-                            updateLastUpdateDisplay();
-                            saveData();
-                            render();
-                            showBanner(`${updatedCount} varlık güncellendi!`);
-                        }
-                    } catch (err) {
-                        showBanner('Fiyat verisi işlenemedi', true);
-                    }
-                }
-            });
-        }
-
-        refreshBtn.addEventListener('click', async () => {
-            if (isUpdating) return;
-
-            const usStocks = holdings.filter(h => h.type === 'stock-us').map(h => h.symbol);
-            const trStocks = holdings.filter(h => h.type === 'stock-tr').map(h => h.symbol);
-            const cryptos = holdings.filter(h => h.type === 'crypto').map(h => h.symbol);
-            const etfs = holdings.filter(h => h.type === 'etf-us').map(h => h.symbol);
-            const funds = holdings.filter(h => h.type === 'fund-tr').map(h => h.symbol);
-            const viops = holdings.filter(h => h.type === 'viop').map(h => h.contract);
-            const hasGold = holdings.some(h => h.type === 'gold');
-
-            if (usStocks.length === 0 && trStocks.length === 0 && cryptos.length === 0 &&
-                etfs.length === 0 && funds.length === 0 && viops.length === 0 && !hasGold) {
-                showToast('Güncellenecek varlık yok', true);
-                return;
-            }
-
-            if (!window.Poe) {
-                showBanner('Poe API kullanılamıyor', true);
-                return;
-            }
-
-            isUpdating = true;
-            refreshBtn.classList.add('updating');
-
-            let prompt = `Aşağıdaki varlıkların GÜNCEL fiyatlarını bul. SADECE JSON döndür:`;
-
-            if (usStocks.length > 0) {
-                prompt += `\nABD Hisseleri (USD): ${[...new Set(usStocks)].join(', ')}`;
-            }
-            if (trStocks.length > 0) {
-                prompt += `\nBIST Hisseleri (TRY): ${[...new Set(trStocks)].join(', ')}`;
-            }
-            if (etfs.length > 0) {
-                prompt += `\nUS ETF'ler (USD): ${[...new Set(etfs)].join(', ')}`;
-            }
-            if (funds.length > 0) {
-                prompt += `\nTR Fonlar (TRY, birim fiyat): ${[...new Set(funds)].join(', ')}`;
-            }
-            if (viops.length > 0) {
-                prompt += `\nVİOP Kontratları (TRY): ${[...new Set(viops)].join(', ')}`;
-            }
-            if (cryptos.length > 0) {
-                prompt += `\nKripto (USD): ${[...new Set(cryptos)].join(', ')}`;
-            }
-            if (hasGold) {
-                prompt += `\nGram Altın (TRY): GOLD_GRAM`;
-            }
-            prompt += `\nUSD/TRY kuru`;
-
-            prompt += `\n\nFormat:
-\`\`\`json
-{"prices":{"AAPL":150.25,"THYAO":320,"SPY":580,"TI2":15.5,"F_XU030":9500,"BTC":95000,"GOLD_GRAM":3200},"usdTryRate":38.5}
-\`\`\``;
-
-            try {
-                await window.Poe.sendUserMessage(
-                    `@GPT-5.1 ${prompt} --web_search true`,
-                    {
-                        handler: 'price-update-handler',
-                        stream: false,
-                        openChat: false
-                    }
-                );
-            } catch (err) {
-                refreshBtn.classList.remove('updating');
-                isUpdating = false;
-                showBanner('Güncelleme başlatılamadı', true);
-            }
-        });
-
-        setInterval(updateLastUpdateDisplay, 60000);
-
-        // Start
-        init();
-    </script>
 </body>
 </html>
