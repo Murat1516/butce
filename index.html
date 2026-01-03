@@ -2281,27 +2281,66 @@
 
                 const expenseByCategory = [];
                 const categoryLabels = [];
+                const categoryOriginalAmounts = []; // Orijinal para biriminde tutarlar
+                const categoryCurrencies = []; // Para birimleri
                 const categoryColors = [
                     '#e17055', '#ff7675', '#fd79a8', '#fdcb6e', '#ffeaa7',
                     '#55efc4', '#00b894', '#74b9ff', '#0984e3', '#a29bfe',
                     '#6c5ce7', '#b2bec3'
                 ];
 
+                const tryRate = getRateForMonth('TRY', currentMonth);
+                const rubRate = getRateForMonth('RUB', currentMonth);
+
                 categories.expense.forEach((cat, index) => {
-                    const amount = monthTx.filter(t => t.categoryId === cat.id).reduce((sum, t) => sum + t.amountUSD, 0);
-                    if (amount > 0) {
-                        expenseByCategory.push(amount);
+                    const catTx = monthTx.filter(t => t.categoryId === cat.id);
+                    const amountUSD = catTx.reduce((sum, t) => sum + t.amountUSD, 0);
+
+                    if (amountUSD > 0) {
+                        expenseByCategory.push(amountUSD);
                         categoryLabels.push(cat.name);
+
+                        // Kategori bütçe para birimine göre orijinal tutarı hesapla
+                        const budgetCurrency = getCategoryBudgetCurrency(cat);
+                        let originalAmount = 0;
+
+                        if (budgetCurrency === 'TRY') {
+                            // TRY bazlı kategori - TRY işlemlerini topla, diğerlerini çevir
+                            originalAmount = catTx.reduce((sum, t) => {
+                                if (t.currency === 'TRY') return sum + t.amount;
+                                if (t.currency === 'USD') return sum + t.amount * tryRate;
+                                if (t.currency === 'RUB') return sum + t.amount * tryRate / rubRate;
+                                return sum;
+                            }, 0);
+                        } else if (budgetCurrency === 'RUB') {
+                            // RUB bazlı kategori - RUB işlemlerini topla, diğerlerini çevir
+                            originalAmount = catTx.reduce((sum, t) => {
+                                if (t.currency === 'RUB') return sum + t.amount;
+                                if (t.currency === 'USD') return sum + t.amount * rubRate;
+                                if (t.currency === 'TRY') return sum + t.amount * rubRate / tryRate;
+                                return sum;
+                            }, 0);
+                        } else {
+                            // USD bazlı kategori
+                            originalAmount = amountUSD;
+                        }
+
+                        categoryOriginalAmounts.push(originalAmount);
+                        categoryCurrencies.push(budgetCurrency);
                     }
                 });
 
                 if (expenseByCategory.length === 0) {
                     expenseByCategory.push(1);
                     categoryLabels.push('Veri yok');
+                    categoryOriginalAmounts.push(0);
+                    categoryCurrencies.push('USD');
                 }
 
                 const totalExpense = expenseByCategory.reduce((a, b) => a + b, 0);
-                const tryRate = getRateForMonth('TRY', currentMonth);
+
+                // Para birimi sembolleri
+                const currencySymbols = { USD: '$', TRY: '₺', RUB: '₽' };
 
                 monthlyChart = new Chart(ctx, {
                     type: 'doughnut',
@@ -2347,10 +2386,23 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        const value = context.parsed;
-                                        const percent = totalExpense > 0 ? ((value / totalExpense) * 100).toFixed(1) : 0;
-                                        const tryValue = value * tryRate;
-                                        return `$${value.toFixed(2)} (₺${tryValue.toFixed(0)}) - %${percent}`;
+                                        const idx = context.dataIndex;
+                                        const valueUSD = context.parsed;
+                                        const percent = totalExpense > 0 ? ((valueUSD / totalExpense) * 100).toFixed(1) : 0;
+
+                                        const originalAmount = categoryOriginalAmounts[idx] || 0;
+                                        const currency = categoryCurrencies[idx] || 'USD';
+                                        const symbol = currencySymbols[currency] || '$';
+
+                                        // Orijinal tutar + Dolar karşılığı
+                                        const formattedOriginal = originalAmount.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+                                        const formattedUSD = valueUSD.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+
+                                        if (currency === 'USD') {
+                                            return `$${formattedUSD} - %${percent}`;
+                                        } else {
+                                            return `${symbol}${formattedOriginal} ($${formattedUSD}) - %${percent}`;
+                                        }
                                     }
                                 }
                             }
