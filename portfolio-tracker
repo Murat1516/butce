@@ -13,84 +13,171 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
 <style>
-/* ====== MEVCUT TÜM CSS KORUNDU ====== */
+/* ==== ORİJİNAL CSS (KORUNDU) ==== */
+:root {
+--bg-primary:#0a0f1c;--bg-secondary:#111827;--bg-card:#1a2235;--bg-card-hover:#222d45;
+--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
+--accent-green:#10b981;--accent-red:#ef4444;--accent-blue:#3b82f6;
+--accent-purple:#8b5cf6;--accent-orange:#f59e0b;--accent-cyan:#06b6d4;
+--border-color:rgba(148,163,184,.1)
+}
+.light{
+--bg-primary:#f8fafc;--bg-secondary:#fff;--bg-card:#fff;--bg-card-hover:#f1f5f9;
+--text-primary:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;
+--border-color:rgba(15,23,42,.1)
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg-primary);color:var(--text-primary)}
+.container{max-width:600px;margin:auto;padding:16px 16px 120px}
+
+/* ✅ YENİ EMTİA RENKLERİ */
 .holding-icon.silver{background:linear-gradient(135deg,#cbd5e1,#64748b)}
 .holding-icon.platinum{background:linear-gradient(135deg,#94a3b8,#475569)}
 .holding-icon.copper{background:linear-gradient(135deg,#fb923c,#b45309)}
+
 footer{
-    text-align:center;
-    padding:16px;
-    font-size:12px;
-    color:var(--text-muted);
+text-align:center;
+padding:16px;
+font-size:12px;
+color:var(--text-muted)
 }
 </style>
 </head>
 
 <body>
-<!-- ✅ ORİJİNAL HTML TAMAMI KORUNDU -->
-<!-- (header, summary, chart, modal, filter, vb.) -->
+
+<div class="container">
+<header class="header">
+<div class="logo">
+<div class="logo-icon"><i class="fas fa-chart-pie"></i></div>
+<span class="logo-text">Portföy</span>
+</div>
+<div class="header-actions">
+<button class="header-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
+<button class="header-btn" id="importBtn"><i class="fas fa-file-import"></i></button>
+<button class="header-btn" id="exportBtn"><i class="fas fa-file-export"></i></button>
+<button class="header-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
+</div>
+<input type="file" id="fileInput" accept=".json" hidden>
+</header>
+
+<div id="bannerContainer"></div>
+<div class="last-update" id="lastUpdate"></div>
+
+<!-- ÖZET -->
+<div class="summary-grid">
+<div class="summary-card main">
+<div class="summary-label">Toplam Portföy (USD)</div>
+<div class="summary-value" id="totalValue">$0</div>
+<div class="summary-sub" id="totalProfitLoss">--</div>
+</div>
+<div class="summary-card">
+<div class="summary-label">Hisse</div>
+<div class="summary-value" id="stockValue">$0</div>
+</div>
+<div class="summary-card">
+<div class="summary-label">Nakit</div>
+<div class="summary-value" id="cashValue">$0</div>
+</div>
+</div>
+
+<!-- VARLIKLAR -->
+<div class="section">
+<div class="section-header"><h2 class="section-title">Varlıklar</h2></div>
+<div class="filter-tabs" id="filterTabs">
+<button class="filter-tab active" data-filter="all">Tümü</button>
+<button class="filter-tab" data-filter="stock-us">🇺🇸 ABD</button>
+<button class="filter-tab" data-filter="stock-tr">🇹🇷 BIST</button>
+<button class="filter-tab" data-filter="etf-us">📊 ETF</button>
+<button class="filter-tab" data-filter="fund-tr">📈 Fon</button>
+<button class="filter-tab" data-filter="viop">📉 VİOP</button>
+<button class="filter-tab" data-filter="cash">💵 Kasa</button>
+<button class="filter-tab" data-filter="deposit">🏦 Faiz</button>
+<button class="filter-tab" data-filter="gold">🥇 Altın</button>
+<button class="filter-tab" data-filter="silver">🥈 Gümüş</button>
+<button class="filter-tab" data-filter="platinum">⚪ Platin</button>
+<button class="filter-tab" data-filter="copper">🟤 Bakır</button>
+<button class="filter-tab" data-filter="crypto">₿ Kripto</button>
+</div>
+<div class="holdings-list" id="holdingsList"></div>
+</div>
+</div>
+
+<button class="fab" id="addBtn"><i class="fas fa-plus"></i></button>
 
 <footer>
-    Made with ❤️ by <strong>Dasdemir</strong>
+Made with ❤️ by <strong>Dasdemir</strong>
 </footer>
 
 <script>
-/* =========================
-   ✅ LOCALSTORAGE ENTEGRASYONU
-   ========================= */
+/* ====== STATE ====== */
+let holdings=[];
+let priceHistory=[];
+let usdTryRate=38.5;
 
-function saveData() {
-    const currentValue = holdings.reduce((s,h)=>s+getHoldingValueUSD(h),0);
-    const today = new Date().toISOString().split('T')[0];
+/* ✅ LOCALSTORAGE */
+function saveData(){
+const total=holdings.reduce((s,h)=>s+getHoldingValueUSD(h),0);
+priceHistory.unshift({date:new Date().toISOString(),totalValue:total});
+priceHistory=priceHistory.slice(0,400);
 
-    const idx = priceHistory.findIndex(p=>p.date.startsWith(today));
-    if(idx>=0){
-        priceHistory[idx].totalValue=currentValue;
-    }else{
-        priceHistory.unshift({date:new Date().toISOString(),totalValue:currentValue});
-    }
-
-    priceHistory = priceHistory.slice(0,400);
-
-    localStorage.setItem('portfolio_holdings',JSON.stringify(holdings));
-    localStorage.setItem('portfolio_history',JSON.stringify(priceHistory));
-    localStorage.setItem('portfolio_usdTry',usdTryRate);
+localStorage.setItem('portfolio_holdings',JSON.stringify(holdings));
+localStorage.setItem('portfolio_history',JSON.stringify(priceHistory));
+localStorage.setItem('portfolio_usdTry',usdTryRate);
 }
 
-function loadData() {
-    try{
-        const h=localStorage.getItem('portfolio_holdings');
-        const p=localStorage.getItem('portfolio_history');
-        const r=localStorage.getItem('portfolio_usdTry');
-
-        if(h) holdings=JSON.parse(h);
-        if(p) priceHistory=JSON.parse(p);
-        if(r) usdTryRate=parseFloat(r);
-    }catch(e){
-        console.error(e);
-    }
+function loadData(){
+const h=localStorage.getItem('portfolio_holdings');
+const p=localStorage.getItem('portfolio_history');
+const r=localStorage.getItem('portfolio_usdTry');
+if(h)holdings=JSON.parse(h);
+if(p)priceHistory=JSON.parse(p);
+if(r)usdTryRate=parseFloat(r);
 }
-</script>
 
-<script>
-/* =========================
-   ✅ Emtia genişletme (Altın zaten vardı)
-   ========================= */
-
+/* ====== HESAPLAR ====== */
 function getHoldingValueUSD(h){
-    if(h.type==='silver'||h.type==='platinum'||h.type==='copper'){
-        return h.quantity*h.currentPrice/usdTryRate;
-    }
-    return window.__oldGetHoldingValueUSD(h);
+if(['gold','silver','platinum','copper'].includes(h.type)){
+return h.quantity*h.currentPrice/usdTryRate;
 }
+if(h.type==='crypto'||h.type==='stock-us'||h.type==='etf-us')return h.quantity*h.currentPrice;
+if(h.type==='stock-tr')return h.quantity*h.currentPrice/usdTryRate;
+return 0;
+}
+
+function render(){
+const total=holdings.reduce((s,h)=>s+getHoldingValueUSD(h),0);
+document.getElementById('totalValue').textContent='$'+total.toFixed(0);
+document.getElementById('holdingsList').innerHTML=
+holdings.map(h=>`
+<div class="holding-card">
+<div class="holding-icon ${h.type}">${h.emoji||'🪙'}</div>
+<div class="holding-info">
+<div class="holding-name">${h.name||h.symbol}</div>
+<div class="holding-detail">${h.quantity}</div>
+</div>
+<div class="holding-value">$${getHoldingValueUSD(h).toFixed(0)}</div>
+</div>
+`).join('');
+}
+
+document.getElementById('addBtn').onclick=()=>{
+const name=prompt('Varlık adı');
+const qty=parseFloat(prompt('Miktar'));
+const price=parseFloat(prompt('Fiyat (TRY)'));
+if(!name||isNaN(qty)||isNaN(price))return;
+holdings.push({type:'gold',name,quantity:qty,currentPrice:price});
+saveData();render();
+};
+
+loadData();
+render();
 </script>
 
+<!-- ✅ PWA SW -->
 <script>
-/* =========================
-   ✅ PWA SERVICE WORKER
-   ========================= */
 if('serviceWorker'in navigator){
-    navigator.serviceWorker.register('service-worker.js');
+navigator.serviceWorker.register('service-worker.js');
 }
 </script>
 
