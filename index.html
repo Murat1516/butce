@@ -3194,6 +3194,20 @@
                 bgLight: [248, 249, 250]
             };
 
+            // Ay isimleri ASCII uyumlu
+            const monthNamesASCII = ['Oca', 'Sub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Agu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+            const monthNamesFullASCII = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'];
+
+            // Binlik ayracli sayi formatlama
+            function formatNum(num, decimals = 0) {
+                return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            // Para birimi sembolu
+            function getCurrencySymbol(currency) {
+                return { USD: '$', TRY: 'TL', RUB: 'R' }[currency] || '$';
+            }
+
             function drawHeader(docRef, title, subtitle) {
                 docRef.setFillColor(...colors.primary);
                 docRef.rect(0, 0, 210, 35, 'F');
@@ -3298,7 +3312,7 @@
 
             // Title
             const title = isMonthly
-                ? `${monthNamesFull[currentMonth]} ${currentYear} Butce Raporu`
+                ? `${monthNamesFullASCII[currentMonth]} ${currentYear} Butce Raporu`
                 : `${currentYear} Yili Butce Raporu`;
 
             const subtitle = `Olusturulma: ${today.toLocaleDateString('tr-TR')} ${today.toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}`;
@@ -3332,14 +3346,14 @@
             const tryRate = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
             const rubRate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
 
-            drawInfoBox(doc, 14, y, 58, 30, 'GELIR PLANI', `$${planIncome.toFixed(0)}`, `TL${(planIncome * tryRate).toFixed(0)} | R${(planIncome * rubRate).toFixed(0)}`, colors.income);
-            drawInfoBox(doc, 76, y, 58, 30, 'GIDER PLANI', `$${planExpense.toFixed(0)}`, `TL${(planExpense * tryRate).toFixed(0)} | R${(planExpense * rubRate).toFixed(0)}`, colors.expense);
-            drawInfoBox(doc, 138, y, 58, 30, 'NET PLAN', `${(planIncome - planExpense) >= 0 ? '+' : ''}$${(planIncome - planExpense).toFixed(0)}`, `TL${((planIncome - planExpense) * tryRate).toFixed(0)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
+            drawInfoBox(doc, 14, y, 58, 30, 'GELIR PLANI', `$${formatNum(planIncome)}`, `TL ${formatNum(planIncome * tryRate)}`, colors.income);
+            drawInfoBox(doc, 76, y, 58, 30, 'GIDER PLANI', `$${formatNum(planExpense)}`, `TL ${formatNum(planExpense * tryRate)}`, colors.expense);
+            drawInfoBox(doc, 138, y, 58, 30, 'NET PLAN', `${(planIncome - planExpense) >= 0 ? '+' : ''}$${formatNum(Math.abs(planIncome - planExpense))}`, `TL ${formatNum((planIncome - planExpense) * tryRate)}`, (planIncome - planExpense) >= 0 ? colors.income : colors.expense);
             y += 35;
 
-            drawInfoBox(doc, 14, y, 58, 30, 'GERCEKLESEN GELIR', `$${factIncome.toFixed(0)}`, `TL${(factIncome * tryRate).toFixed(0)} | R${(factIncome * rubRate).toFixed(0)}`, colors.income);
-            drawInfoBox(doc, 76, y, 58, 30, 'GERCEKLESEN GIDER', `$${factExpense.toFixed(0)}`, `TL${(factExpense * tryRate).toFixed(0)} | R${(factExpense * rubRate).toFixed(0)}`, colors.expense);
-            drawInfoBox(doc, 138, y, 58, 30, 'NET DURUM', `${net >= 0 ? '+' : ''}$${net.toFixed(0)}`, `TL${(net * tryRate).toFixed(0)}`, netColor);
+            drawInfoBox(doc, 14, y, 58, 30, 'GERCEKLESEN GELIR', `$${formatNum(factIncome)}`, `TL ${formatNum(factIncome * tryRate)}`, colors.income);
+            drawInfoBox(doc, 76, y, 58, 30, 'GERCEKLESEN GIDER', `$${formatNum(factExpense)}`, `TL ${formatNum(factExpense * tryRate)}`, colors.expense);
+            drawInfoBox(doc, 138, y, 58, 30, 'NET DURUM', `${net >= 0 ? '+' : ''}$${formatNum(Math.abs(net))}`, `TL ${formatNum(net * tryRate)}`, netColor);
             y += 38;
 
             doc.setTextColor(...colors.text);
@@ -3395,7 +3409,7 @@
                 const totalPlanUSD = planUSD + planTRY_inUSD + planRUB_inUSD;
 
                 monthlyByCurrencyData.push({
-                    month: monthNames[i],
+                    month: monthNamesASCII[i],
                     tryRate: monthTryRate,
                     rubRate: monthRubRate,
                     planUSD, actualUSD,
@@ -3414,15 +3428,15 @@
 
                 return [
                     isCurrentMonthRow ? `> ${m.month}` : m.month,
-                    `${m.planUSD.toFixed(0)}/${m.actualUSD.toFixed(0)}`,
-                    `${m.planTRY.toFixed(0)}/${m.actualTRY.toFixed(0)}`,
-                    `${m.planRUB.toFixed(0)}/${m.actualRUB.toFixed(0)}`,
-                    { text: `${m.totalPlanUSD.toFixed(0)}/${m.totalActualUSD.toFixed(0)}`, color: m.diff >= 0 ? colors.income : colors.expense },
-                    { text: `${m.diff >= 0 ? '+' : ''}${m.diff.toFixed(0)}`, color: diffColor }
+                    `${formatNum(m.planUSD)} / ${formatNum(m.actualUSD)}`,
+                    `${formatNum(m.planTRY)} / ${formatNum(m.actualTRY)}`,
+                    `${formatNum(m.planRUB)} / ${formatNum(m.actualRUB)}`,
+                    { text: `${formatNum(m.totalPlanUSD)} / ${formatNum(m.totalActualUSD)}`, color: m.diff >= 0 ? colors.income : colors.expense },
+                    { text: `${m.diff >= 0 ? '+' : ''}${formatNum(Math.abs(m.diff))}`, color: diffColor }
                 ];
             });
 
-            y = drawTable(doc, currencyTableHeaders, currencyTableRows, y, [18, 32, 38, 38, 40, 22]);
+            y = drawTable(doc, currencyTableHeaders, currencyTableRows, y, [18, 34, 42, 42, 38, 22]);
 
             // Yıllık toplam özeti
             const totalsByYear = {
@@ -3442,7 +3456,9 @@
             const tryPercentVal = totalsByYear.totalActualUSD > 0 ? (monthlyByCurrencyData.reduce((sum, m) => sum + (m.tryRate > 0 ? m.actualTRY / m.tryRate : 0), 0) / totalsByYear.totalActualUSD * 100) : 0;
             const rubPercentVal = totalsByYear.totalActualUSD > 0 ? (monthlyByCurrencyData.reduce((sum, m) => sum + (m.rubRate > 0 ? m.actualRUB / m.rubRate : 0), 0) / totalsByYear.totalActualUSD * 100) : 0;
 
-            y += 3;
+            // Yıllık özet kutusu için sayfa kontrolü
+            y = checkPageBreak(doc, y + 3, 50);
+
             doc.setFillColor(...colors.bgLight);
             doc.roundedRect(14, y, 182, 42, 3, 3, 'F');
 
@@ -3455,27 +3471,27 @@
             doc.setTextColor(39, 174, 96);
             doc.text(`USD:`, 20, y + 16);
             doc.setTextColor(...colors.text);
-            doc.text(`$${totalsByYear.planUSD.toFixed(0)} / $${totalsByYear.actualUSD.toFixed(0)}`, 38, y + 16);
+            doc.text(`$${formatNum(totalsByYear.planUSD)} / $${formatNum(totalsByYear.actualUSD)}`, 38, y + 16);
 
             // TRY satırı
             doc.setTextColor(231, 76, 60);
-            doc.text(`TRY:`, 85, y + 16);
+            doc.text(`TRY:`, 90, y + 16);
             doc.setTextColor(...colors.text);
-            doc.text(`${totalsByYear.planTRY.toFixed(0)} / ${totalsByYear.actualTRY.toFixed(0)}`, 100, y + 16);
+            doc.text(`${formatNum(totalsByYear.planTRY)} / ${formatNum(totalsByYear.actualTRY)}`, 103, y + 16);
 
             // RUB satırı
             doc.setTextColor(52, 152, 219);
-            doc.text(`RUB:`, 150, y + 16);
+            doc.text(`RUB:`, 152, y + 16);
             doc.setTextColor(...colors.text);
-            doc.text(`${totalsByYear.planRUB.toFixed(0)} / ${totalsByYear.actualRUB.toFixed(0)}`, 165, y + 16);
+            doc.text(`${formatNum(totalsByYear.planRUB)} / ${formatNum(totalsByYear.actualRUB)}`, 165, y + 16);
 
             // Toplam USD satırı
             doc.setFontSize(9);
             doc.setTextColor(...colors.primary);
             doc.text(`TOPLAM (USD):`, 20, y + 26);
-            doc.text(`$${totalsByYear.totalPlanUSD.toFixed(0)} / $${totalsByYear.totalActualUSD.toFixed(0)}`, 60, y + 26);
+            doc.text(`$${formatNum(totalsByYear.totalPlanUSD)} / $${formatNum(totalsByYear.totalActualUSD)}`, 60, y + 26);
             doc.setTextColor(...(yearDiff >= 0 ? colors.income : colors.expense));
-            doc.text(`Fark: ${yearDiff >= 0 ? '+' : ''}$${yearDiff.toFixed(0)}`, 120, y + 26);
+            doc.text(`Fark: ${yearDiff >= 0 ? '+' : ''}$${formatNum(Math.abs(yearDiff))}`, 125, y + 26);
 
             // Yüzde çubukları
             const barStartX = 20;
@@ -3538,19 +3554,19 @@
 
                 doc.setTextColor(...colors.text);
                 doc.setFontSize(9);
-                doc.text(`${monthNamesFull[currentMonth]} Ayi Analizi`, 20, y + 10);
+                doc.text(`${monthNamesFullASCII[currentMonth]} Ayi Analizi`, 20, y + 10);
 
                 doc.setFontSize(8);
-                doc.text(`- Bu ayin ${dayOfMonth}. gunu itibariyle toplam harcama: $${monthExpense.toFixed(0)} (TL${(monthExpense * tryRate).toFixed(0)})`, 20, y + 20);
-                doc.text(`- Gunluk ortalama harcama: $${dailyAverage.toFixed(1)} (TL${(dailyAverage * tryRate).toFixed(0)})`, 20, y + 28);
-                doc.text(`- Ay sonu tahmini harcama: $${projectedYearlyExpense.toFixed(0)} (TL${(projectedYearlyExpense * tryRate).toFixed(0)})`, 20, y + 36);
+                doc.text(`- Bu ayin ${dayOfMonth}. gunu itibariyle toplam harcama: $${formatNum(monthExpense)} (TL ${formatNum(monthExpense * tryRate)})`, 20, y + 20);
+                doc.text(`- Gunluk ortalama harcama: $${formatNum(dailyAverage, 1)} (TL ${formatNum(dailyAverage * tryRate)})`, 20, y + 28);
+                doc.text(`- Ay sonu tahmini harcama: $${formatNum(projectedYearlyExpense)} (TL ${formatNum(projectedYearlyExpense * tryRate)})`, 20, y + 36);
 
                 doc.setTextColor(...(projectedDiff >= 0 ? colors.income : colors.expense));
                 doc.setFontSize(9);
                 if (projectedDiff >= 0) {
-                    doc.text(`[OK] Bu trendle devam ederseniz ay sonunda $${projectedDiff.toFixed(0)} butce altinda kalirsiniz.`, 20, y + 48);
+                    doc.text(`[OK] Bu trendle devam ederseniz ay sonunda $${formatNum(projectedDiff)} butce altinda kalirsiniz.`, 20, y + 48);
                 } else {
-                    doc.text(`[!] Bu trendle devam ederseniz ay sonunda $${Math.abs(projectedDiff).toFixed(0)} butce asimi olacak!`, 20, y + 48);
+                    doc.text(`[!] Bu trendle devam ederseniz ay sonunda $${formatNum(Math.abs(projectedDiff))} butce asimi olacak!`, 20, y + 48);
                 }
                 y += 62;
             } else {
@@ -3570,87 +3586,155 @@
                 doc.text(`${currentYear} Yili Harcama Trend Analizi`, 20, y + 10);
 
                 doc.setFontSize(8);
-                doc.text(`- Yilin ${daysPassedThisYear}. gunu itibariyle toplam harcama: $${totalExpenseSoFar.toFixed(0)} (TL${(totalExpenseSoFar * avgTryRate).toFixed(0)})`, 20, y + 20);
-                doc.text(`- Gunluk ortalama harcama: $${dailyAverage.toFixed(1)} (TL${(dailyAverage * avgTryRate).toFixed(0)})`, 20, y + 28);
-                doc.text(`- Aylik ortalama harcama: $${monthlyAverage.toFixed(0)} (TL${(monthlyAverage * avgTryRate).toFixed(0)})`, 20, y + 36);
-                doc.text(`- Yil sonu tahmini harcama: $${projectedYearlyExpense.toFixed(0)} (TL${(projectedYearlyExpense * avgTryRate).toFixed(0)})`, 20, y + 44);
+                doc.text(`- Yilin ${daysPassedThisYear}. gunu itibariyle toplam harcama: $${formatNum(totalExpenseSoFar)} (TL ${formatNum(totalExpenseSoFar * avgTryRate)})`, 20, y + 20);
+                doc.text(`- Gunluk ortalama harcama: $${formatNum(dailyAverage, 1)} (TL ${formatNum(dailyAverage * avgTryRate)})`, 20, y + 28);
+                doc.text(`- Aylik ortalama harcama: $${formatNum(monthlyAverage)} (TL ${formatNum(monthlyAverage * avgTryRate)})`, 20, y + 36);
+                doc.text(`- Yil sonu tahmini harcama: $${formatNum(projectedYearlyExpense)} (TL ${formatNum(projectedYearlyExpense * avgTryRate)})`, 20, y + 44);
 
                 doc.setTextColor(...(projectedDiff >= 0 ? colors.income : colors.expense));
                 doc.setFontSize(9);
                 if (projectedDiff >= 0) {
-                    doc.text(`[OK] Bu trendle devam ederseniz yil sonunda $${projectedDiff.toFixed(0)} butce altinda kalirsiniz.`, 20, y + 54);
+                    doc.text(`[OK] Bu trendle devam ederseniz yil sonunda $${formatNum(projectedDiff)} butce altinda kalirsiniz.`, 20, y + 54);
                 } else {
-                    doc.text(`[!] Bu trendle devam ederseniz yil sonunda $${Math.abs(projectedDiff).toFixed(0)} butce asimi olacak!`, 20, y + 54);
+                    doc.text(`[!] Bu trendle devam ederseniz yil sonunda $${formatNum(Math.abs(projectedDiff))} butce asimi olacak!`, 20, y + 54);
                 }
                 y += 68;
             }
 
             // ==================== KATEGORI BAZINDA HARCAMALAR ====================
             y = checkPageBreak(doc, y, 50);
-            y = drawSectionTitle(doc, 'GIDER KATEGORILERI DETAYI', y, colors.expense);
+            y = drawSectionTitle(doc, 'GIDER KATEGORILERI DETAYI (Orijinal Para Birimi)', y, colors.expense);
 
             const categoryData = categories.expense.map(cat => {
-                const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const budgetCurrency = getCategoryBudgetCurrency(cat);
+                const planUSD = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+
+                // Gerçekleşen harcamaları al
                 const txListCat = isMonthly
                     ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
                     : yearTx.filter(t => t.categoryId === cat.id);
-                const fact = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
-                const diff = plan - fact;
-                const percent = plan > 0 ? (fact / plan) * 100 : 0;
-                return { name: cat.name, plan, fact, diff, percent };
-            }).filter(c => c.plan > 0 || c.fact > 0).sort((a, b) => b.fact - a.fact);
+                const factUSD = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
 
-            const catTableHeaders = ['Kategori', 'Plan ($)', 'Gerc. ($)', 'Plan (TL)', 'Gerc. (TL)', 'Fark', 'Oran'];
+                // Orijinal para biriminde değerler
+                let planOriginal, factOriginal, rate;
+                if (budgetCurrency === 'TRY') {
+                    rate = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+                    planOriginal = planUSD * rate;
+                    factOriginal = txListCat.filter(t => t.currency === 'TRY').reduce((sum, t) => sum + t.amount, 0);
+                    // Diğer para birimlerinden gelen harcamaları da ekle
+                    factOriginal += txListCat.filter(t => t.currency === 'USD').reduce((sum, t) => sum + t.amount * rate, 0);
+                    factOriginal += txListCat.filter(t => t.currency === 'RUB').reduce((sum, t) => {
+                        const rubRate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+                        return sum + t.amount * rate / rubRate;
+                    }, 0);
+                } else if (budgetCurrency === 'RUB') {
+                    rate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+                    planOriginal = planUSD * rate;
+                    factOriginal = txListCat.filter(t => t.currency === 'RUB').reduce((sum, t) => sum + t.amount, 0);
+                    // Diğer para birimlerinden gelen harcamaları da ekle
+                    factOriginal += txListCat.filter(t => t.currency === 'USD').reduce((sum, t) => sum + t.amount * rate, 0);
+                    factOriginal += txListCat.filter(t => t.currency === 'TRY').reduce((sum, t) => {
+                        const tryRate2 = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+                        return sum + t.amount * rate / tryRate2;
+                    }, 0);
+                } else {
+                    // USD
+                    planOriginal = planUSD;
+                    factOriginal = factUSD;
+                }
+
+                const diff = planOriginal - factOriginal;
+                const percent = planOriginal > 0 ? (factOriginal / planOriginal) * 100 : 0;
+
+                return {
+                    name: cat.name,
+                    currency: budgetCurrency,
+                    planOriginal,
+                    factOriginal,
+                    diff,
+                    percent,
+                    planUSD,
+                    factUSD
+                };
+            }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factUSD - a.factUSD);
+
+            const catTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
             const catTableRows = categoryData.map(c => {
                 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
                 const percentColor = c.percent > 100 ? colors.expense : (c.percent > 80 ? colors.warning : colors.income);
+                const symbol = getCurrencySymbol(c.currency);
                 return [
-                    c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name,
-                    c.plan.toFixed(0),
-                    c.fact.toFixed(0),
-                    (c.plan * tryRate).toFixed(0),
-                    (c.fact * tryRate).toFixed(0),
-                    { text: `${c.diff >= 0 ? '+' : ''}${c.diff.toFixed(0)}`, color: diffColor },
+                    c.name.length > 18 ? c.name.substring(0, 18) + '...' : c.name,
+                    c.currency,
+                    `${symbol}${formatNum(c.planOriginal)}`,
+                    `${symbol}${formatNum(c.factOriginal)}`,
+                    { text: `${c.diff >= 0 ? '+' : '-'}${symbol}${formatNum(Math.abs(c.diff))}`, color: diffColor },
                     { text: `%${c.percent.toFixed(0)}`, color: percentColor }
                 ];
             });
 
             if (catTableRows.length > 0) {
-                y = drawTable(doc, catTableHeaders, catTableRows, y, [40, 22, 22, 28, 28, 22, 20]);
+                y = drawTable(doc, catTableHeaders, catTableRows, y, [48, 16, 38, 38, 30, 18]);
             }
 
             // ==================== GELIR KATEGORILERI ====================
             y = checkPageBreak(doc, y, 50);
-            y = drawSectionTitle(doc, 'GELIR KATEGORILERI DETAYI', y, colors.income);
+            y = drawSectionTitle(doc, 'GELIR KATEGORILERI DETAYI (Orijinal Para Birimi)', y, colors.income);
 
             const incomeData = categories.income.map(cat => {
-                const plan = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+                const budgetCurrency = getCategoryBudgetCurrency(cat);
+                const planUSD = isMonthly ? getCategoryMonthlyPlan(cat, currentMonth) : getCategoryYearlyPlan(cat);
+
                 const txListCat = isMonthly
                     ? yearTx.filter(t => t.categoryId === cat.id && new Date(t.date).getMonth() === currentMonth)
                     : yearTx.filter(t => t.categoryId === cat.id);
-                const fact = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
-                const diff = fact - plan;
-                const percent = plan > 0 ? (fact / plan) * 100 : 0;
-                return { name: cat.name, plan, fact, diff, percent };
-            }).filter(c => c.plan > 0 || c.fact > 0).sort((a, b) => b.fact - a.fact);
+                const factUSD = txListCat.reduce((sum, t) => sum + t.amountUSD, 0);
 
-            const incomeTableHeaders = ['Kategori', 'Plan ($)', 'Gerc. ($)', 'Plan (TL)', 'Gerc. (TL)', 'Fark', 'Oran'];
+                // Orijinal para biriminde değerler
+                let planOriginal, factOriginal, rate;
+                if (budgetCurrency === 'TRY') {
+                    rate = isMonthly ? getRateForMonth('TRY', currentMonth) : monthlyRates.TRY.reduce((a, b) => a + b, 0) / 12;
+                    planOriginal = planUSD * rate;
+                    factOriginal = factUSD * rate;
+                } else if (budgetCurrency === 'RUB') {
+                    rate = isMonthly ? getRateForMonth('RUB', currentMonth) : monthlyRates.RUB.reduce((a, b) => a + b, 0) / 12;
+                    planOriginal = planUSD * rate;
+                    factOriginal = factUSD * rate;
+                } else {
+                    planOriginal = planUSD;
+                    factOriginal = factUSD;
+                }
+
+                const diff = factOriginal - planOriginal;
+                const percent = planOriginal > 0 ? (factOriginal / planOriginal) * 100 : 0;
+
+                return {
+                    name: cat.name,
+                    currency: budgetCurrency,
+                    planOriginal,
+                    factOriginal,
+                    diff,
+                    percent
+                };
+            }).filter(c => c.planOriginal > 0 || c.factOriginal > 0).sort((a, b) => b.factOriginal - a.factOriginal);
+
+            const incomeTableHeaders = ['Kategori', 'PB', 'Plan', 'Gerceklesen', 'Fark', 'Oran'];
             const incomeTableRows = incomeData.map(c => {
                 const diffColor = c.diff >= 0 ? colors.income : colors.expense;
                 const percentColor = c.percent >= 100 ? colors.income : (c.percent > 50 ? colors.warning : colors.expense);
+                const symbol = getCurrencySymbol(c.currency);
                 return [
-                    c.name.length > 15 ? c.name.substring(0, 15) + '...' : c.name,
-                    c.plan.toFixed(0),
-                    c.fact.toFixed(0),
-                    (c.plan * tryRate).toFixed(0),
-                    (c.fact * tryRate).toFixed(0),
-                    { text: `${c.diff >= 0 ? '+' : ''}${c.diff.toFixed(0)}`, color: diffColor },
+                    c.name.length > 18 ? c.name.substring(0, 18) + '...' : c.name,
+                    c.currency,
+                    `${symbol}${formatNum(c.planOriginal)}`,
+                    `${symbol}${formatNum(c.factOriginal)}`,
+                    { text: `${c.diff >= 0 ? '+' : '-'}${symbol}${formatNum(Math.abs(c.diff))}`, color: diffColor },
                     { text: `%${c.percent.toFixed(0)}`, color: percentColor }
                 ];
             });
 
             if (incomeTableRows.length > 0) {
-                y = drawTable(doc, incomeTableHeaders, incomeTableRows, y, [40, 22, 22, 28, 28, 22, 20]);
+                y = drawTable(doc, incomeTableHeaders, incomeTableRows, y, [48, 16, 38, 38, 30, 18]);
             }
 
             // ==================== SON ISLEMLER ====================
@@ -3662,25 +3746,26 @@
                 y = checkPageBreak(doc, y, 50);
                 y = drawSectionTitle(doc, 'SON ISLEMLER', y, colors.primary);
 
-                const txTableHeaders = ['Tarih', 'Kategori', 'Tutar ($)', 'Tutar (TL)', 'Not'];
+                const txTableHeaders = ['Tarih', 'Kategori', 'PB', 'Tutar', 'Tutar ($)', 'Not'];
                 const txTableRows = txList.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20).map(tx => {
                     const cat = [...categories.income, ...categories.expense].find(c => c.id === tx.categoryId);
                     const catName = cat ? cat.name : 'Bilinmiyor';
                     const txDate = new Date(tx.date);
-                    const txTryRate = getRateForMonth('TRY', txDate.getMonth());
                     const sign = tx.type === 'income' ? '+' : '-';
                     const color = tx.type === 'income' ? colors.income : colors.expense;
+                    const symbol = getCurrencySymbol(tx.currency);
 
                     return [
                         txDate.toLocaleDateString('tr-TR'),
                         catName.length > 12 ? catName.substring(0, 12) + '...' : catName,
-                        { text: `${sign}${tx.amountUSD.toFixed(0)}`, color },
-                        { text: `${sign}${(tx.amountUSD * txTryRate).toFixed(0)}`, color },
-                        (tx.note || '-').substring(0, 20)
+                        tx.currency,
+                        { text: `${sign}${symbol}${formatNum(tx.amount)}`, color },
+                        { text: `${sign}$${formatNum(tx.amountUSD)}`, color },
+                        (tx.note || '-').substring(0, 18)
                     ];
                 });
 
-                y = drawTable(doc, txTableHeaders, txTableRows, y, [28, 35, 30, 35, 54]);
+                y = drawTable(doc, txTableHeaders, txTableRows, y, [25, 32, 16, 32, 28, 50]);
             }
 
             // Footer on each page
@@ -3781,7 +3866,7 @@
 
             if (isMonthly) {
                 const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                expenseData.push(['Kategori', 'Aylık Plan ($)', 'Aylık Plan (���)', 'Günlük Limit ($)', 'Günlük Limit (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
+                expenseData.push(['Kategori', 'Aylık Plan ($)', 'Aylık Plan (₺)', 'Günlük Limit ($)', 'Günlük Limit (₺)', 'Gerçekleşen ($)', 'Gerçekleşen (₺)', 'Fark ($)', 'Fark (₺)', 'İşlem Sayısı']);
 
                 categories.expense.forEach(cat => {
                     const plan = getCategoryMonthlyPlan(cat, currentMonth);
