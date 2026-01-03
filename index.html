@@ -1635,9 +1635,26 @@
                 <h2><i class="fas fa-coins"></i> Döviz Kurları</h2>
                 <button class="modal-close" onclick="closeModal('ratesModal')">×</button>
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 18px;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
                 Aylık kurları girin (1 USD = ?)
             </p>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="auto-rate-btn" onclick="fetchCurrentRates()" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #0984e3, #00b894); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-sync-alt" id="fetchRateIcon"></i>
+                    <span>Güncel Kurları Al</span>
+                </button>
+                <button class="auto-rate-btn" onclick="fillAllMonthsWithCurrent()" style="padding: 10px 16px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 500;">
+                    <i class="fas fa-fill"></i> Tümüne Uygula
+                </button>
+            </div>
+            <div id="currentRateDisplay" style="background: var(--bg-secondary); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: none;">
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">📡 Güncel Kurlar (Canlı)</div>
+                <div style="display: flex; gap: 20px; font-weight: 600;">
+                    <span>🇹🇷 1$ = <span id="liveRateTRY">-</span> ₺</span>
+                    <span>🇷🇺 1$ = <span id="liveRateRUB">-</span> ₽</span>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;" id="rateUpdateTime"></div>
+            </div>
             <div class="form-group">
                 <label>🇹🇷 Türk Lirası (TRY)</label>
                 <div class="monthly-grid" id="monthlyRatesTRY"></div>
@@ -2812,7 +2829,7 @@
             renderCategorySelect();
         }
 
-        function saveTransaction() {
+        async function saveTransaction() {
             const amount = parseFloat(document.getElementById('transactionAmount').value);
             const note = document.getElementById('transactionNote').value.trim();
             const date = document.getElementById('transactionDate').value;
@@ -2821,10 +2838,29 @@
             if (!amount || amount <= 0) { showToast('Tutar girin'); return; }
             if (!date) { showToast('Tarih seçin'); return; }
 
-            // İşlem tarihinin ayına göre kuru al
-            const txMonth = new Date(date).getMonth();
-            const rateAtTime = getRateForMonth(selectedCurrency, txMonth);
-            const amountUSD = amount / rateAtTime;
+            let rateAtTime;
+            let amountUSD;
+
+            // USD ise kur 1
+            if (selectedCurrency === 'USD') {
+                rateAtTime = 1;
+                amountUSD = amount;
+            } else {
+                // Canlı kuru çekmeyi dene
+                const liveRate = await fetchLiveRateForCurrency(selectedCurrency);
+
+                if (liveRate) {
+                    rateAtTime = liveRate;
+                    amountUSD = amount / rateAtTime;
+                    showToast(`Canlı kur kullanıldı: 1$ = ${rateAtTime.toFixed(4)} ${selectedCurrency}`);
+                } else {
+                    // Canlı kur alınamazsa aylık kuru kullan
+                    const txMonth = new Date(date).getMonth();
+                    rateAtTime = getRateForMonth(selectedCurrency, txMonth);
+                    amountUSD = amount / rateAtTime;
+                    showToast('Kayıtlı aylık kur kullanıldı');
+                }
+            }
 
             transactions.push({
                 id: Date.now(),
@@ -2842,6 +2878,46 @@
             saveData();
             updateAll();
             showToast('Kaydedildi ✓');
+        }
+
+        // Belirli bir para birimi için canlı kur çek
+        async function fetchLiveRateForCurrency(currency) {
+            try {
+                // Önce cache'e bak (son 5 dakika içinde alınmışsa)
+                if (cachedLiveRates[currency] && cachedLiveRates.timestamp) {
+                    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                    if (cachedLiveRates.timestamp.getTime() > fiveMinutesAgo) {
+                        return cachedLiveRates[currency];
+                    }
+                }
+
+                // Frankfurter API
+                const response = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${currency}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.rates && data.rates[currency]) {
+                        cachedLiveRates[currency] = data.rates[currency];
+                        cachedLiveRates.timestamp = new Date();
+                        return data.rates[currency];
+                    }
+                }
+
+                // Yedek API
+                const backupResponse = await fetch('https://open.er-api.com/v6/latest/USD');
+                if (backupResponse.ok) {
+                    const backupData = await backupResponse.json();
+                    if (backupData.rates && backupData.rates[currency]) {
+                        cachedLiveRates[currency] = backupData.rates[currency];
+                        cachedLiveRates.timestamp = new Date();
+                        return backupData.rates[currency];
+                    }
+                }
+
+                return null;
+            } catch (error) {
+                console.error('Canlı kur alınamadı:', error);
+                return null;
+            }
         }
 
         function renderMonthlyBudgetGrid(containerId, values = null) {
@@ -4405,6 +4481,111 @@
             saveData();
             updateCurrentRatesDisplay();
             showToast('Kurlar güncellendi ✓');
+        }
+
+        // ==================== OTOMATIK KUR GÜNCELLEME ====================
+        let cachedLiveRates = { TRY: null, RUB: null, timestamp: null };
+
+        async function fetchCurrentRates() {
+            const icon = document.getElementById('fetchRateIcon');
+            const display = document.getElementById('currentRateDisplay');
+
+            // Animasyon başlat
+            icon.classList.add('fa-spin');
+
+            try {
+                // Frankfurter API - ücretsiz ve CORS destekli
+                const response = await fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,RUB');
+
+                if (!response.ok) {
+                    throw new Error('API yanıt vermedi');
+                }
+
+                const data = await response.json();
+
+                if (data.rates && data.rates.TRY && data.rates.RUB) {
+                    cachedLiveRates.TRY = data.rates.TRY;
+                    cachedLiveRates.RUB = data.rates.RUB;
+                    cachedLiveRates.timestamp = new Date();
+
+                    // Gösterimi güncelle
+                    document.getElementById('liveRateTRY').textContent = data.rates.TRY.toFixed(4);
+                    document.getElementById('liveRateRUB').textContent = data.rates.RUB.toFixed(4);
+                    document.getElementById('rateUpdateTime').textContent =
+                        `Son güncelleme: ${cachedLiveRates.timestamp.toLocaleString('tr-TR')}`;
+
+                    display.style.display = 'block';
+                    showToast('Güncel kurlar alındı ✓');
+                } else {
+                    throw new Error('Kur verisi alınamadı');
+                }
+            } catch (error) {
+                console.error('Kur API hatası:', error);
+
+                // Yedek API dene - ExchangeRate API
+                try {
+                    const backupResponse = await fetch('https://open.er-api.com/v6/latest/USD');
+                    const backupData = await backupResponse.json();
+
+                    if (backupData.rates && backupData.rates.TRY && backupData.rates.RUB) {
+                        cachedLiveRates.TRY = backupData.rates.TRY;
+                        cachedLiveRates.RUB = backupData.rates.RUB;
+                        cachedLiveRates.timestamp = new Date();
+
+                        document.getElementById('liveRateTRY').textContent = backupData.rates.TRY.toFixed(4);
+                        document.getElementById('liveRateRUB').textContent = backupData.rates.RUB.toFixed(4);
+                        document.getElementById('rateUpdateTime').textContent =
+                            `Son güncelleme: ${cachedLiveRates.timestamp.toLocaleString('tr-TR')}`;
+
+                        display.style.display = 'block';
+                        showToast('Güncel kurlar alındı ✓');
+                    } else {
+                        throw new Error('Yedek API de çalışmadı');
+                    }
+                } catch (backupError) {
+                    showToast('Kurlar alınamadı, internet bağlantınızı kontrol edin');
+                }
+            } finally {
+                icon.classList.remove('fa-spin');
+            }
+        }
+
+        function fillAllMonthsWithCurrent() {
+            if (!cachedLiveRates.TRY || !cachedLiveRates.RUB) {
+                showToast('Önce "Güncel Kurları Al" butonuna tıklayın');
+                return;
+            }
+
+            // Tüm aylara güncel kuru uygula
+            const tryInputs = document.querySelectorAll('#monthlyRatesTRY input');
+            const rubInputs = document.querySelectorAll('#monthlyRatesRUB input');
+
+            tryInputs.forEach(input => {
+                input.value = cachedLiveRates.TRY.toFixed(2);
+            });
+
+            rubInputs.forEach(input => {
+                input.value = cachedLiveRates.RUB.toFixed(2);
+            });
+
+            showToast('Tüm aylara güncel kur uygulandı ✓');
+        }
+
+        function fillCurrentMonthWithLiveRate() {
+            if (!cachedLiveRates.TRY || !cachedLiveRates.RUB) {
+                return;
+            }
+
+            const tryInputs = document.querySelectorAll('#monthlyRatesTRY input');
+            const rubInputs = document.querySelectorAll('#monthlyRatesRUB input');
+
+            // Sadece mevcut ayı güncelle
+            if (tryInputs[currentMonth]) {
+                tryInputs[currentMonth].value = cachedLiveRates.TRY.toFixed(2);
+            }
+            if (rubInputs[currentMonth]) {
+                rubInputs[currentMonth].value = cachedLiveRates.RUB.toFixed(2);
+            }
         }
 
         // ==================== DELETE ====================
