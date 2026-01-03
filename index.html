@@ -20,41 +20,45 @@
 
     <style>
         :root {
-            --bg-primary: #f8f5f1;
+            --bg-primary: #f5f7fa;
             --bg-secondary: #ffffff;
             --bg-card: #ffffff;
-            --text-primary: #2d3436;
-            --text-secondary: #636e72;
-            --accent-income: #00b894;
-            --accent-income-light: #e8f8f5;
-            --accent-expense: #e17055;
-            --accent-expense-light: #fef0ed;
-            --accent-main: #6c5ce7;
-            --accent-main-light: #f0eeff;
-            --accent-warning: #fdcb6e;
-            --accent-warning-light: #fef9e7;
-            --border-color: #e0dcd7;
-            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --text-primary: #1a202c;
+            --text-secondary: #64748b;
+            --accent-income: #10b981;
+            --accent-income-light: #ecfdf5;
+            --accent-expense: #f43f5e;
+            --accent-expense-light: #fff1f2;
+            --accent-main: #0891b2;
+            --accent-main-light: #ecfeff;
+            --accent-main-dark: #0e7490;
+            --accent-warning: #f59e0b;
+            --accent-warning-light: #fffbeb;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
         }
 
         .dark {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-card: #1f2b47;
-            --text-primary: #edf2f7;
-            --text-secondary: #a0aec0;
-            --accent-income: #38d9a9;
-            --accent-income-light: rgba(56, 217, 169, 0.15);
-            --accent-expense: #ff7675;
-            --accent-expense-light: rgba(255, 118, 117, 0.15);
-            --accent-main: #a29bfe;
-            --accent-main-light: rgba(162, 155, 254, 0.15);
-            --accent-warning: #ffeaa7;
-            --accent-warning-light: rgba(253, 203, 110, 0.15);
-            --border-color: #2d3a5c;
-            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-income: #34d399;
+            --accent-income-light: rgba(52, 211, 153, 0.15);
+            --accent-expense: #fb7185;
+            --accent-expense-light: rgba(251, 113, 133, 0.15);
+            --accent-main: #22d3ee;
+            --accent-main-light: rgba(34, 211, 238, 0.15);
+            --accent-main-dark: #06b6d4;
+            --accent-warning: #fbbf24;
+            --accent-warning-light: rgba(251, 191, 36, 0.15);
+            --border-color: #334155;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         * {
@@ -75,46 +79,75 @@
         }
 
         .header {
-            background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%);
-            padding: calc(16px + var(--safe-top)) 20px 24px;
+            background: linear-gradient(135deg, #0891b2 0%, #0ea5e9 50%, #38bdf8 100%);
+            padding: calc(12px + var(--safe-top)) 20px 16px;
             color: white;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 20px rgba(8, 145, 178, 0.3);
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
+        .header-brand {
+            display: flex;
+            flex-direction: column;
+        }
+
         .header h1 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.5px;
         }
 
-        .header h1 i { font-size: 1.2rem; }
+        .header h1 i {
+            font-size: 1.3rem;
+            background: rgba(255,255,255,0.2);
+            padding: 8px;
+            border-radius: 10px;
+        }
+
+        .header-credit {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            font-weight: 500;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+        }
 
         .header-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .header-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: all 0.2s ease;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
         }
 
         .header-btn:active {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.35);
             transform: scale(0.95);
         }
 
@@ -125,9 +158,10 @@
             gap: 16px;
             padding: 16px;
             background: var(--bg-card);
-            margin: -20px 16px 16px;
+            margin: -12px 16px 16px;
             border-radius: 16px;
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
         }
 
         .year-btn {
@@ -248,9 +282,26 @@
             border-radius: 16px;
             padding: 16px;
             box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
         }
 
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-main);
+        }
+
+        .summary-card.income::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .summary-card.expense::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+
         .summary-card.full { grid-column: 1 / -1; }
+        .summary-card.full::before { background: linear-gradient(90deg, var(--accent-main), #38bdf8); }
 
         .summary-card .label {
             font-size: 0.7rem;
@@ -258,12 +309,20 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .summary-card .label i {
+            font-size: 0.8rem;
         }
 
         .summary-card .amount {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
         .summary-card .sub-amount {
@@ -277,8 +336,8 @@
             justify-content: space-between;
             font-size: 0.75rem;
             color: var(--text-secondary);
-            margin-top: 6px;
-            padding-top: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px dashed var(--border-color);
         }
 
@@ -292,47 +351,51 @@
         .summary-card .amount.negative { color: var(--accent-expense); }
 
         .plan-fact-bar {
-            height: 8px;
+            height: 6px;
             background: var(--border-color);
-            border-radius: 4px;
-            margin-top: 8px;
+            border-radius: 3px;
+            margin-top: 10px;
             overflow: hidden;
         }
 
         .plan-fact-fill {
             height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s ease;
+            border-radius: 3px;
+            transition: width 0.4s ease;
         }
 
-        .plan-fact-fill.under { background: var(--accent-income); }
-        .plan-fact-fill.over { background: var(--accent-expense); }
-        .plan-fact-fill.warning { background: var(--accent-warning); }
+        .plan-fact-fill.under { background: linear-gradient(90deg, #10b981, #34d399); }
+        .plan-fact-fill.over { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .plan-fact-fill.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 
         .tabs {
             display: flex;
             margin: 0 16px 16px;
             background: var(--bg-card);
             border-radius: 14px;
-            padding: 4px;
+            padding: 5px;
             box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
         }
 
         .tab {
             flex: 1;
-            padding: 14px 8px;
+            padding: 12px 8px;
             text-align: center;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s;
             color: var(--text-secondary);
+            border: none;
+            background: transparent;
         }
 
         .tab.active {
-            background: var(--accent-main);
+            background: linear-gradient(135deg, #0891b2, #0ea5e9);
             color: white;
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
         }
 
         .section {
@@ -785,20 +848,25 @@
             position: fixed;
             bottom: calc(24px + var(--safe-bottom));
             right: 24px;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%);
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #0891b2 0%, #0ea5e9 50%, #38bdf8 100%);
             color: white;
             border: none;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             cursor: pointer;
-            box-shadow: 0 6px 24px rgba(108, 92, 231, 0.4);
+            box-shadow: 0 8px 30px rgba(8, 145, 178, 0.45);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
             z-index: 100;
+        }
+
+        .fab:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(8, 145, 178, 0.55);
         }
 
         .fab:active { transform: scale(0.9); }
@@ -989,16 +1057,22 @@
 
         .submit-btn {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent-main) 0%, #a29bfe 100%);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0891b2 0%, #0ea5e9 100%);
             color: white;
-            font-size: 1.05rem;
-            font-weight: 800;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 8px;
+            transition: all 0.2s ease;
+            margin-top: 12px;
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4);
         }
 
         .submit-btn:active { transform: scale(0.98); }
@@ -1242,14 +1316,16 @@
             bottom: calc(100px + var(--safe-bottom));
             left: 50%;
             transform: translateX(-50%);
-            background: var(--text-primary);
-            color: var(--bg-primary);
-            padding: 14px 28px;
-            border-radius: 30px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             z-index: 400;
             animation: fadeInUp 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         @keyframes fadeInUp {
@@ -1310,23 +1386,28 @@
 </head>
 <body>
     <header class="header">
-        <h1><i class="fas fa-chart-pie"></i> Bütçe Takip</h1>
-        <div class="header-actions">
-            <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
-                <i class="fas fa-file-pdf"></i>
-            </button>
-            <button class="header-btn" onclick="generateExcelReport()" title="Excel Rapor">
-                <i class="fas fa-file-excel"></i>
-            </button>
-            <button class="header-btn" onclick="openDataModal()" title="Veri Yönetimi">
-                <i class="fas fa-database"></i>
-            </button>
-            <button class="header-btn" onclick="openRatesModal()" title="Döviz Kurları">
-                <i class="fas fa-coins"></i>
-            </button>
-            <button class="header-btn" onclick="showInstallBanner()" title="Yükle">
-                <i class="fas fa-download"></i>
-            </button>
+        <div class="header-top">
+            <div class="header-brand">
+                <h1><i class="fas fa-wallet"></i> Bütçe Takip</h1>
+                <span class="header-credit">made by Daşdemir</span>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="generatePDFReport()" title="PDF Rapor">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
+                <button class="header-btn" onclick="generateExcelReport()" title="Excel Rapor">
+                    <i class="fas fa-file-excel"></i>
+                </button>
+                <button class="header-btn" onclick="openDataModal()" title="Veri Yönetimi">
+                    <i class="fas fa-database"></i>
+                </button>
+                <button class="header-btn" onclick="openRatesModal()" title="Döviz Kurları">
+                    <i class="fas fa-coins"></i>
+                </button>
+                <button class="header-btn" onclick="showInstallBanner()" title="Yükle">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
         </div>
     </header>
 
